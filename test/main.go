@@ -5,6 +5,7 @@ import (
 	"github.com/NBSChain/go-gossip-tcp"
 	"github.com/spf13/cobra"
 	"os"
+	"time"
 )
 
 var rootCmd = &cobra.Command{
@@ -17,6 +18,13 @@ var rootCmd = &cobra.Command{
 	Run: mainRun,
 }
 
+var genesisIp string
+var servicePort int
+
+func init() {
+	rootCmd.Flags().StringVarP(&genesisIp, "genesis", "g", "52.8.190.235", "set the genesis ip address")
+	rootCmd.Flags().IntVarP(&servicePort, "port", "p", 13001, "set the genesis service port")
+}
 func main() {
 
 	if err := rootCmd.Execute(); err != nil {
@@ -26,10 +34,16 @@ func main() {
 }
 
 func mainRun(cmd *cobra.Command, args []string) {
+	msgMaker := NewMsgManager()
+	node := tcpgossip.NewGspNode(msgMaker.nodeId)
+	c := &tcpgossip.GspConf{
+		GossipControlMessageSize: 1 << 12,
+		GenesisIP:                genesisIp,
+		TCPServicePort:           servicePort,
+		SubTimeOut:               time.Second * 4,
+	}
 
-	node := tcpgossip.NewGspNode()
-
-	if err := node.Init(); err != nil {
+	if err := node.Init(c); err != nil {
 		panic(err)
 	}
 

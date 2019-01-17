@@ -7,8 +7,33 @@ enum MsgType{
     SubInit      = 1;
     Forward      = 2;
     VoteContact  = 3;
+    GotContact   = 4;
+    SubAck      = 21;
+}
+
+message Subscribe{
+    string NodeId = 1;
+}
+
+message Vote{
+    string NodeId = 1;
+    string IP = 2;
+    int32 TTL = 3;
+}
+
+message ID{
+    string nodeId = 1;
+}
+message IDWithIP{
+    string NodeId = 1;
+    string IP = 2;
 }
 
 message CtrlMsg{
-    MsgType type = 1;
+    MsgType     Type        = 1;
+    Subscribe   Subscribe   = 2;
+    Vote        Vote        = 3;
+    IDWithIP    Forward     = 5;
+    IDWithIP    GotContact  = 4;
+    ID          SubAck      = 21;
 }

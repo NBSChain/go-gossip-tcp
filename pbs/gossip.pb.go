@@ -27,13 +27,17 @@ const (
 	MsgType_SubInit     MsgType = 1
 	MsgType_Forward     MsgType = 2
 	MsgType_VoteContact MsgType = 3
+	MsgType_GotContact  MsgType = 4
+	MsgType_SubAck      MsgType = 21
 )
 
 var MsgType_name = map[int32]string{
-	0: "Unknown",
-	1: "SubInit",
-	2: "Forward",
-	3: "VoteContact",
+	0:  "Unknown",
+	1:  "SubInit",
+	2:  "Forward",
+	3:  "VoteContact",
+	4:  "GotContact",
+	21: "SubAck",
 }
 
 var MsgType_value = map[string]int32{
@@ -41,6 +45,8 @@ var MsgType_value = map[string]int32{
 	"SubInit":     1,
 	"Forward":     2,
 	"VoteContact": 3,
+	"GotContact":  4,
+	"SubAck":      21,
 }
 
 func (x MsgType) String() string {
@@ -51,18 +57,203 @@ func (MsgType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_878fa4887b90140c, []int{0}
 }
 
-type CtrlMsg struct {
-	Type                 MsgType  `protobuf:"varint,1,opt,name=type,proto3,enum=gsp.tcp.MsgType" json:"type,omitempty"`
+type Subscribe struct {
+	NodeId               string   `protobuf:"bytes,1,opt,name=NodeId,proto3" json:"NodeId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Subscribe) Reset()         { *m = Subscribe{} }
+func (m *Subscribe) String() string { return proto.CompactTextString(m) }
+func (*Subscribe) ProtoMessage()    {}
+func (*Subscribe) Descriptor() ([]byte, []int) {
+	return fileDescriptor_878fa4887b90140c, []int{0}
+}
+
+func (m *Subscribe) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Subscribe.Unmarshal(m, b)
+}
+func (m *Subscribe) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Subscribe.Marshal(b, m, deterministic)
+}
+func (m *Subscribe) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Subscribe.Merge(m, src)
+}
+func (m *Subscribe) XXX_Size() int {
+	return xxx_messageInfo_Subscribe.Size(m)
+}
+func (m *Subscribe) XXX_DiscardUnknown() {
+	xxx_messageInfo_Subscribe.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Subscribe proto.InternalMessageInfo
+
+func (m *Subscribe) GetNodeId() string {
+	if m != nil {
+		return m.NodeId
+	}
+	return ""
+}
+
+type Vote struct {
+	NodeId               string   `protobuf:"bytes,1,opt,name=NodeId,proto3" json:"NodeId,omitempty"`
+	IP                   string   `protobuf:"bytes,2,opt,name=IP,proto3" json:"IP,omitempty"`
+	TTL                  int32    `protobuf:"varint,3,opt,name=TTL,proto3" json:"TTL,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Vote) Reset()         { *m = Vote{} }
+func (m *Vote) String() string { return proto.CompactTextString(m) }
+func (*Vote) ProtoMessage()    {}
+func (*Vote) Descriptor() ([]byte, []int) {
+	return fileDescriptor_878fa4887b90140c, []int{1}
+}
+
+func (m *Vote) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Vote.Unmarshal(m, b)
+}
+func (m *Vote) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Vote.Marshal(b, m, deterministic)
+}
+func (m *Vote) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Vote.Merge(m, src)
+}
+func (m *Vote) XXX_Size() int {
+	return xxx_messageInfo_Vote.Size(m)
+}
+func (m *Vote) XXX_DiscardUnknown() {
+	xxx_messageInfo_Vote.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Vote proto.InternalMessageInfo
+
+func (m *Vote) GetNodeId() string {
+	if m != nil {
+		return m.NodeId
+	}
+	return ""
+}
+
+func (m *Vote) GetIP() string {
+	if m != nil {
+		return m.IP
+	}
+	return ""
+}
+
+func (m *Vote) GetTTL() int32 {
+	if m != nil {
+		return m.TTL
+	}
+	return 0
+}
+
+type ID struct {
+	NodeId               string   `protobuf:"bytes,1,opt,name=nodeId,proto3" json:"nodeId,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ID) Reset()         { *m = ID{} }
+func (m *ID) String() string { return proto.CompactTextString(m) }
+func (*ID) ProtoMessage()    {}
+func (*ID) Descriptor() ([]byte, []int) {
+	return fileDescriptor_878fa4887b90140c, []int{2}
+}
+
+func (m *ID) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ID.Unmarshal(m, b)
+}
+func (m *ID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ID.Marshal(b, m, deterministic)
+}
+func (m *ID) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ID.Merge(m, src)
+}
+func (m *ID) XXX_Size() int {
+	return xxx_messageInfo_ID.Size(m)
+}
+func (m *ID) XXX_DiscardUnknown() {
+	xxx_messageInfo_ID.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ID proto.InternalMessageInfo
+
+func (m *ID) GetNodeId() string {
+	if m != nil {
+		return m.NodeId
+	}
+	return ""
+}
+
+type IDWithIP struct {
+	NodeId               string   `protobuf:"bytes,1,opt,name=NodeId,proto3" json:"NodeId,omitempty"`
+	IP                   string   `protobuf:"bytes,2,opt,name=IP,proto3" json:"IP,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *IDWithIP) Reset()         { *m = IDWithIP{} }
+func (m *IDWithIP) String() string { return proto.CompactTextString(m) }
+func (*IDWithIP) ProtoMessage()    {}
+func (*IDWithIP) Descriptor() ([]byte, []int) {
+	return fileDescriptor_878fa4887b90140c, []int{3}
+}
+
+func (m *IDWithIP) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_IDWithIP.Unmarshal(m, b)
+}
+func (m *IDWithIP) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_IDWithIP.Marshal(b, m, deterministic)
+}
+func (m *IDWithIP) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IDWithIP.Merge(m, src)
+}
+func (m *IDWithIP) XXX_Size() int {
+	return xxx_messageInfo_IDWithIP.Size(m)
+}
+func (m *IDWithIP) XXX_DiscardUnknown() {
+	xxx_messageInfo_IDWithIP.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_IDWithIP proto.InternalMessageInfo
+
+func (m *IDWithIP) GetNodeId() string {
+	if m != nil {
+		return m.NodeId
+	}
+	return ""
+}
+
+func (m *IDWithIP) GetIP() string {
+	if m != nil {
+		return m.IP
+	}
+	return ""
+}
+
+type CtrlMsg struct {
+	Type                 MsgType    `protobuf:"varint,1,opt,name=Type,proto3,enum=gsp.tcp.MsgType" json:"Type,omitempty"`
+	Subscribe            *Subscribe `protobuf:"bytes,2,opt,name=Subscribe,proto3" json:"Subscribe,omitempty"`
+	Vote                 *Vote      `protobuf:"bytes,3,opt,name=Vote,proto3" json:"Vote,omitempty"`
+	Forward              *IDWithIP  `protobuf:"bytes,5,opt,name=Forward,proto3" json:"Forward,omitempty"`
+	GotContact           *IDWithIP  `protobuf:"bytes,4,opt,name=GotContact,proto3" json:"GotContact,omitempty"`
+	SubAck               *ID        `protobuf:"bytes,21,opt,name=SubAck,proto3" json:"SubAck,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
 func (m *CtrlMsg) Reset()         { *m = CtrlMsg{} }
 func (m *CtrlMsg) String() string { return proto.CompactTextString(m) }
 func (*CtrlMsg) ProtoMessage()    {}
 func (*CtrlMsg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_878fa4887b90140c, []int{0}
+	return fileDescriptor_878fa4887b90140c, []int{4}
 }
 
 func (m *CtrlMsg) XXX_Unmarshal(b []byte) error {
@@ -90,23 +281,73 @@ func (m *CtrlMsg) GetType() MsgType {
 	return MsgType_Unknown
 }
 
+func (m *CtrlMsg) GetSubscribe() *Subscribe {
+	if m != nil {
+		return m.Subscribe
+	}
+	return nil
+}
+
+func (m *CtrlMsg) GetVote() *Vote {
+	if m != nil {
+		return m.Vote
+	}
+	return nil
+}
+
+func (m *CtrlMsg) GetForward() *IDWithIP {
+	if m != nil {
+		return m.Forward
+	}
+	return nil
+}
+
+func (m *CtrlMsg) GetGotContact() *IDWithIP {
+	if m != nil {
+		return m.GotContact
+	}
+	return nil
+}
+
+func (m *CtrlMsg) GetSubAck() *ID {
+	if m != nil {
+		return m.SubAck
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterEnum("gsp.tcp.MsgType", MsgType_name, MsgType_value)
+	proto.RegisterType((*Subscribe)(nil), "gsp.tcp.Subscribe")
+	proto.RegisterType((*Vote)(nil), "gsp.tcp.Vote")
+	proto.RegisterType((*ID)(nil), "gsp.tcp.ID")
+	proto.RegisterType((*IDWithIP)(nil), "gsp.tcp.IDWithIP")
 	proto.RegisterType((*CtrlMsg)(nil), "gsp.tcp.CtrlMsg")
 }
 
 func init() { proto.RegisterFile("gossip.proto", fileDescriptor_878fa4887b90140c) }
 
 var fileDescriptor_878fa4887b90140c = []byte{
-	// 151 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x49, 0xcf, 0x2f, 0x2e,
-	0xce, 0x2c, 0xd0, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x4f, 0x2f, 0x2e, 0xd0, 0x2b, 0x49,
-	0x2e, 0x50, 0xd2, 0xe7, 0x62, 0x77, 0x2e, 0x29, 0xca, 0xf1, 0x2d, 0x4e, 0x17, 0x52, 0xe1, 0x62,
-	0x29, 0xa9, 0x2c, 0x48, 0x95, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x33, 0x12, 0xd0, 0x83, 0x2a, 0xd1,
-	0xf3, 0x2d, 0x4e, 0x0f, 0xa9, 0x2c, 0x48, 0x0d, 0x02, 0xcb, 0x6a, 0x39, 0x72, 0xb1, 0x43, 0x05,
-	0x84, 0xb8, 0xb9, 0xd8, 0x43, 0xf3, 0xb2, 0xf3, 0xf2, 0xcb, 0xf3, 0x04, 0x18, 0x40, 0x9c, 0xe0,
-	0xd2, 0x24, 0xcf, 0xbc, 0xcc, 0x12, 0x01, 0x46, 0x10, 0xc7, 0x2d, 0xbf, 0xa8, 0x3c, 0xb1, 0x28,
-	0x45, 0x80, 0x49, 0x88, 0x9f, 0x8b, 0x3b, 0x2c, 0xbf, 0x24, 0xd5, 0x39, 0x3f, 0xaf, 0x24, 0x31,
-	0xb9, 0x44, 0x80, 0x39, 0x89, 0x0d, 0xec, 0x06, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0xc3,
-	0xa0, 0xce, 0xd9, 0x93, 0x00, 0x00, 0x00,
+	// 329 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xc1, 0x4a, 0xc3, 0x40,
+	0x10, 0x86, 0x4d, 0x9a, 0x36, 0x76, 0xa2, 0x75, 0x1d, 0xa8, 0xe4, 0xe0, 0xa1, 0xa6, 0x1e, 0x8a,
+	0x42, 0xd0, 0xf8, 0x02, 0x4a, 0x8b, 0xb2, 0x60, 0xa5, 0x6c, 0xab, 0x9e, 0x3c, 0x34, 0x69, 0x89,
+	0xa1, 0x92, 0x0d, 0xd9, 0x2d, 0xc5, 0x47, 0xf0, 0xad, 0x65, 0xb7, 0xdb, 0x10, 0x0f, 0x05, 0x6f,
+	0xf9, 0xe7, 0xff, 0x26, 0x33, 0xff, 0xb0, 0x70, 0x94, 0x72, 0x21, 0xb2, 0x22, 0x2c, 0x4a, 0x2e,
+	0x39, 0xba, 0xa9, 0x28, 0x42, 0x99, 0x14, 0x41, 0x1f, 0xda, 0xd3, 0x75, 0x2c, 0x92, 0x32, 0x8b,
+	0x97, 0x78, 0x06, 0xad, 0x17, 0xbe, 0x58, 0xd2, 0x85, 0x6f, 0xf5, 0xac, 0x41, 0x9b, 0x19, 0x15,
+	0xdc, 0x83, 0xf3, 0xc6, 0xe5, 0x5e, 0x1f, 0x3b, 0x60, 0xd3, 0x89, 0x6f, 0xeb, 0x9a, 0x4d, 0x27,
+	0x48, 0xa0, 0x31, 0x9b, 0x3d, 0xfb, 0x8d, 0x9e, 0x35, 0x68, 0x32, 0xf5, 0x19, 0x9c, 0x83, 0x4d,
+	0x47, 0xaa, 0x3f, 0xff, 0xd3, 0xbf, 0x55, 0x41, 0x04, 0x87, 0x74, 0xf4, 0x9e, 0xc9, 0x4f, 0x3a,
+	0xf9, 0xef, 0x8c, 0xe0, 0xc7, 0x06, 0x77, 0x28, 0xcb, 0xaf, 0xb1, 0x48, 0xf1, 0x12, 0x9c, 0xd9,
+	0x77, 0xb1, 0xd4, 0x1d, 0x9d, 0x88, 0x84, 0x26, 0x5c, 0x38, 0x16, 0xa9, 0xaa, 0x33, 0xed, 0xe2,
+	0x4d, 0x2d, 0xaa, 0xfe, 0x91, 0x17, 0x61, 0x85, 0x56, 0x0e, 0xab, 0xdd, 0xe3, 0x62, 0x9b, 0x5b,
+	0x07, 0xf1, 0xa2, 0xe3, 0x0a, 0x56, 0x45, 0xb6, 0x3d, 0xc9, 0x35, 0xb8, 0x8f, 0xbc, 0xdc, 0xcc,
+	0xcb, 0x85, 0xdf, 0xd4, 0xd4, 0x69, 0x45, 0xed, 0x22, 0xb1, 0x1d, 0x81, 0xb7, 0x00, 0x4f, 0x5c,
+	0x0e, 0x79, 0x2e, 0xe7, 0x89, 0xf4, 0x9d, 0x7d, 0x7c, 0x0d, 0xc2, 0x3e, 0xb4, 0xa6, 0xeb, 0xf8,
+	0x21, 0x59, 0xf9, 0x5d, 0x8d, 0x7b, 0x35, 0x9c, 0x19, 0xeb, 0xea, 0x03, 0x5c, 0x13, 0x15, 0x3d,
+	0x70, 0x5f, 0xf3, 0x55, 0xce, 0x37, 0x39, 0x39, 0x50, 0x62, 0xba, 0x8e, 0x69, 0x9e, 0x49, 0x62,
+	0x29, 0x61, 0xf6, 0x20, 0x36, 0x9e, 0x80, 0xa7, 0xd6, 0x37, 0x53, 0x48, 0x03, 0x3b, 0xf5, 0xd5,
+	0x88, 0x83, 0xb0, 0x9b, 0x4b, 0xba, 0x71, 0x4b, 0xbf, 0x99, 0xbb, 0xdf, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0x87, 0x67, 0xb4, 0xfe, 0x43, 0x02, 0x00, 0x00,
 }
