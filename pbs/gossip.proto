@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package gsp.tcp;
+
+enum MsgType{
+    Unknown      = 0;
+    SubInit      = 1;
+    Forward      = 2;
+    VoteContact  = 3;
+}
+
+message CtrlMsg{
+    MsgType type = 1;
+}
