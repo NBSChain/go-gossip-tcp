@@ -6,7 +6,7 @@ import (
 )
 
 func (node *GspCtrlNode) asGenesisNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
-
+	defer conn.Close()
 	logger.Debug("oh, I am the Genesis node:->", msg)
 
 	if _, err := conn.Write(node.AckMSG()); err != nil {
@@ -15,6 +15,10 @@ func (node *GspCtrlNode) asGenesisNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) erro
 	}
 
 	nodeId := msg.Subscribe.NodeId
+	if nodeId == node.nodeId {
+		return ESelfReq
+	}
+
 	ttl := int32(len(node.outView))
 	rAddr := conn.RemoteAddr().String()
 	ip, _, _ := net.SplitHostPort(rAddr)
@@ -42,6 +46,7 @@ func (node *GspCtrlNode) asContactNode(nodeId, ip string) error {
 }
 
 func (node *GspCtrlNode) broadCast(nodeId, ip string) {
+
 	logger.Debug("prepare to introduce you:->", nodeId, ip)
 	if len(node.outView) == 0 {
 		logger.Debug("I have no friends to introduce to you")
@@ -50,10 +55,12 @@ func (node *GspCtrlNode) broadCast(nodeId, ip string) {
 
 	data := node.FwdSubMSG(nodeId, ip)
 	for id, e := range node.outView {
+
 		if _, err := e.conn.Write(data); err != nil {
 			logger.Warning("introduce new member err:->", err, id)
 			node.removeViewEntity(id)
 		}
+
 		logger.Debug("introduce new subscriber to my friend:->", id)
 	}
 }
@@ -76,10 +83,11 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 
 	if _, err := conn.Write(node.ContactMsg(myIp)); err != nil {
 		logger.Warning("err when notify the subscriber:->", err)
+		conn.Close()
 		return err
 	}
 
-	e := NewViewEntity(conn)
+	e := NewViewEntity(conn, ip, nodeId)
 	node.outView[nodeId] = e
 	node.inView[nodeId] = e
 

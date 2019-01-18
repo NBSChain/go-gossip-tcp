@@ -1,6 +1,8 @@
 package tcpgossip
 
 import (
+	"context"
+	"fmt"
 	"github.com/NBSChain/go-gossip-tcp/pbs"
 	"github.com/NBSChain/go-nbs/utils"
 	"github.com/gogo/protobuf/proto"
@@ -9,8 +11,9 @@ import (
 )
 
 var (
-	conf   *GspConf = nil
-	logger          = utils.GetLogInstance()
+	conf     *GspConf = nil
+	logger            = utils.GetLogInstance()
+	ESelfReq          = fmt.Errorf("it's a soliloquy")
 )
 
 type GspConf struct {
@@ -18,9 +21,15 @@ type GspConf struct {
 	TCPServicePort           int    //= 13001
 	GossipControlMessageSize int
 	SubTimeOut               time.Duration
+	RetrySubInterval         time.Duration
+	HeartBeat                time.Duration
+	IsolateCheck             time.Duration
 }
 
 type GspCtrlNode struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	nodeId      string
 	serviceConn *net.TCPListener
 	outView     map[string]*ViewEntity
@@ -28,8 +37,11 @@ type GspCtrlNode struct {
 }
 
 func NewGspNode(nodeId string) *GspCtrlNode {
+	ctx, cl := context.WithCancel(context.Background())
 
 	node := &GspCtrlNode{
+		ctx:     ctx,
+		cancel:  cl,
 		nodeId:  nodeId,
 		outView: make(map[string]*ViewEntity),
 		inView:  make(map[string]*ViewEntity),
@@ -50,32 +62,85 @@ func (node *GspCtrlNode) Init(c *GspConf) error {
 	}
 	node.serviceConn = conn
 
-	if err := node.Subscribe(); err != nil {
+	return nil
+}
+
+func (node *GspCtrlNode) gossipManager() {
+
+	logger.Info("tcp gossip node prepare to join in the new network.....")
+
+	data := node.SubMsg(false)
+	isGenesis := false
+
+ReTry:
+	if err := node.Subscribe(data); err != nil {
+
 		logger.Warning("failed to subscribe any contact:->", err)
-		return err
+
+		if err != ESelfReq {
+			time.Sleep(conf.RetrySubInterval)
+			goto ReTry
+		}
+
+		isGenesis = true
+		logger.Info("I'm genesis node......")
 	}
 
-	return nil
+	for {
+		select {
+		case <-time.After(conf.HeartBeat):
+
+			node.sendHeartBeat()
+
+			if len(node.inView) == 0 && !isGenesis {
+				data = node.SubMsg(true)
+				goto ReTry
+			}
+
+		case <-node.ctx.Done():
+			logger.Warning("exist the gossip manager thread......")
+			return
+		}
+	}
 }
 
 func (node *GspCtrlNode) Run() {
 
-	logger.Info("tcp gossip node start to run.....")
+	go node.connReceiver()
+
+	go node.gossipManager()
+
+	select {
+	case <-node.ctx.Done():
+		logger.Warning("process finish......")
+	}
+
+	node.Destroy()
+}
+
+func (node *GspCtrlNode) Destroy() {
+}
+
+func (node *GspCtrlNode) connReceiver() {
+
+	logger.Info("tcp gossip node prepare to join in the new network.....")
+	defer node.serviceConn.Close()
 
 	for {
 		conn, err := node.serviceConn.Accept()
 		if err != nil {
-			logger.Error("service is done:->", err)
+			logger.Warning("service is done:->", err)
+			node.cancel()
 			return
 		}
-		go node.process(conn)
+
+		go node.connHandle(conn)
 	}
 }
 
-func (node *GspCtrlNode) process(conn net.Conn) {
-	defer conn.Close()
+func (node *GspCtrlNode) connHandle(conn net.Conn) {
 
-	logger.Debug("one process create:->", conn.RemoteAddr().String())
+	logger.Debug("one connHandle create:->", conn.RemoteAddr().String())
 
 	buffer := make([]byte, conf.GossipControlMessageSize)
 	n, err := conn.Read(buffer)
@@ -94,7 +159,9 @@ func (node *GspCtrlNode) process(conn net.Conn) {
 	switch msg.Type {
 	case gsp_tcp.MsgType_SubInit:
 		err = node.asGenesisNode(msg, conn)
+	case gsp_tcp.MsgType_GotContact:
+		err = node.subSuccess(msg, conn)
 	}
 
-	logger.Debug("one process exit:->", conn.RemoteAddr().String(), err)
+	logger.Debug("one connHandle exit:->", conn.RemoteAddr().String(), err)
 }

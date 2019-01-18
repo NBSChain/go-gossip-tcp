@@ -8,11 +8,13 @@ enum MsgType{
     Forward      = 2;
     VoteContact  = 3;
     GotContact   = 4;
+    HeartBeat    = 5;
     SubAck      = 21;
 }
 
 message Subscribe{
-    string NodeId = 1;
+    string NodeId   = 1;
+    bool   isReSub  = 2;
 }
 
 message Vote{
@@ -24,6 +26,7 @@ message Vote{
 message ID{
     string nodeId = 1;
 }
+
 message IDWithIP{
     string NodeId = 1;
     string IP = 2;
@@ -35,5 +38,7 @@ message CtrlMsg{
     Vote        Vote        = 3;
     IDWithIP    Forward     = 5;
     IDWithIP    GotContact  = 4;
+    ID          HeartBeat   = 6;
+
     ID          SubAck      = 21;
 }

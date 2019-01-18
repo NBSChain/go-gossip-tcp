@@ -41,6 +41,9 @@ func mainRun(cmd *cobra.Command, args []string) {
 		GenesisIP:                genesisIp,
 		TCPServicePort:           servicePort,
 		SubTimeOut:               time.Second * 4,
+		RetrySubInterval:         time.Second * 15,
+		HeartBeat:                time.Second * 100,
+		IsolateCheck:             time.Second * 300,
 	}
 
 	if err := node.Init(c); err != nil {

@@ -3,45 +3,49 @@ package tcpgossip
 import (
 	"fmt"
 	"github.com/NBSChain/go-gossip-tcp/pbs"
-	"github.com/gogo/protobuf/proto"
 	"net"
-	"time"
 )
 
-func (node *GspCtrlNode) Subscribe() error {
+func (node *GspCtrlNode) Subscribe(data []byte) error {
 
-	conn, err := net.DialTCP("tcp4", nil, &net.TCPAddr{
+	rAddr := &net.TCPAddr{
 		Port: conf.TCPServicePort,
 		IP:   net.ParseIP(conf.GenesisIP),
-	})
+	}
+
+	msg, err := node.pingPongMsg(nil, rAddr, conf.SubTimeOut, data)
 	if err != nil {
-		logger.Warning("connect to genesis node err:->", err)
 		return err
 	}
-	defer conn.Close()
-
-	data := node.SubMsg()
-
-	if _, err := conn.Write(data); err != nil {
-		logger.Warning("write subscribe data err:->", err)
-		return err
-	}
-
-	conn.SetReadDeadline(time.Now().Add(conf.SubTimeOut))
-	buffer := make([]byte, conf.GossipControlMessageSize)
-	n, err := conn.Read(buffer)
-	if err != nil {
-		logger.Warning("subscribe err:->", err)
-		return err
-	}
-
-	msg := &gsp_tcp.CtrlMsg{}
-	proto.Unmarshal(buffer[:n], msg)
 
 	if msg.Type != gsp_tcp.MsgType_SubAck {
 		return fmt.Errorf("no available genesis node(%s):->", msg)
 	}
 
+	if msg.SubAck.NodeId == node.nodeId {
+		return ESelfReq
+	}
+
 	logger.Debug("he will proxy our subscribe request:->", msg.SubAck.NodeId)
+
+	return nil
+}
+
+func (node *GspCtrlNode) subSuccess(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
+
+	logger.Debug("oh, I find my contact:->", msg)
+
+	contact := msg.GotContact
+	nodeId := contact.NodeId
+
+	if _, ok := node.inView[nodeId]; ok {
+		logger.Warning("duplicate contact notification:->", nodeId)
+		return fmt.Errorf("duplicate contact notification(%s):->", nodeId)
+	}
+
+	e := NewViewEntity(conn, contact.IP, contact.NodeId)
+	node.inView[nodeId] = e
+	node.outView[nodeId] = e
+
 	return nil
 }

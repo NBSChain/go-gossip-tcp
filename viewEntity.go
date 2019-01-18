@@ -9,7 +9,8 @@ import (
 
 type ViewEntity struct {
 	ok     bool
-	peerId string
+	peerID string
+	peerIP string
 	ctx    context.Context
 	closer context.CancelFunc
 	conn   net.Conn
@@ -26,7 +27,7 @@ func (e *ViewEntity) reading() {
 		n, err := e.conn.Read(buffer)
 
 		if err != nil {
-			logger.Warning("connection node read err:->", e.peerId)
+			logger.Warning("connection node read err:->", e.peerID)
 			return
 		}
 
@@ -39,7 +40,7 @@ func (e *ViewEntity) reading() {
 	}
 }
 
-func NewViewEntity(c net.Conn) *ViewEntity {
+func NewViewEntity(c net.Conn, ip, id string) *ViewEntity {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	node := &ViewEntity{
@@ -47,6 +48,8 @@ func NewViewEntity(c net.Conn) *ViewEntity {
 		closer: cancel,
 		conn:   c,
 		ok:     true,
+		peerID: id,
+		peerIP: ip,
 	}
 
 	go node.reading()
@@ -56,29 +59,44 @@ func NewViewEntity(c net.Conn) *ViewEntity {
 func (e *ViewEntity) Close() {
 
 	if !e.ok {
-		logger.Debug("try to close a closed connection node:->", e.peerId)
+		logger.Debug("try to cancel a closed connection node:->", e.peerID)
 		return
 	}
 
-	logger.Info("the connection node closed:->", e.peerId)
+	logger.Info("the connection node closed:->", e.peerID)
 
 	e.ok = false
 	e.closer()
 
 	if err := e.conn.Close(); err != nil {
-		logger.Warning("failed to close connection node:->", e.peerId)
+		logger.Warning("failed to cancel connection node:->", e.peerID)
 	}
 }
 
 func (node *GspCtrlNode) removeViewEntity(id string) {
 
 	if item, ok := node.outView[id]; ok {
+		logger.Debug("remove from out put view :->", item.peerID)
 		delete(node.outView, id)
 		item.Close()
 	}
 
 	if item, ok := node.inView[id]; ok {
+		logger.Debug("remove from in put view :->", item.peerID)
 		delete(node.outView, id)
 		item.Close()
+	}
+}
+
+func (node *GspCtrlNode) sendHeartBeat() {
+
+	data := node.HeartBeatMsg()
+
+	for id, item := range node.outView {
+
+		if _, err := item.conn.Write(data); err != nil {
+			logger.Warning("sending heart beat err:->", id, err)
+			node.removeViewEntity(id)
+		}
 	}
 }
