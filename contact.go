@@ -178,3 +178,21 @@ func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
 
 	return defaultNode
 }
+
+func (node *GspCtrlNode) choseRandom() *ViewEntity {
+
+	idx := rand.Intn(len(node.outView))
+	i := 0
+
+	for _, item := range node.outView {
+		if i == idx {
+			return item
+		}
+		i++
+	}
+	return nil
+}
+
+func (node *GspCtrlNode) acceptForwarded(msg *gsp_tcp.CtrlMsg) error {
+	return nil
+}

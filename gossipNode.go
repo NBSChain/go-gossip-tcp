@@ -6,6 +6,7 @@ import (
 	"github.com/NBSChain/go-gossip-tcp/pbs"
 	"github.com/NBSChain/go-nbs/utils"
 	"github.com/gogo/protobuf/proto"
+	"math/rand"
 	"net"
 	"time"
 )
@@ -203,8 +204,16 @@ func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
 	forward := msg.Forward
 	nodeId := forward.NodeId
 
+	prob := float64(1) / float64(1+len(node.outView))
+	randProb := rand.Float64()
+
 	_, ok := node.outView[nodeId]
 	if ok {
+		item := node.choseRandom()
+		logger.Debug("I have got you, so introduce to my friend:->", item.peerID)
+	}
+
+	if randProb < prob {
 
 	}
 
