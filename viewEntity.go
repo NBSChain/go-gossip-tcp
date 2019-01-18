@@ -45,10 +45,10 @@ func (e *ViewEntity) reading() {
 		}
 
 		logger.Debug("view entity node received :->", msg)
-		switch msg.Type {
-		case gsp_tcp.MsgType_HeartBeat:
+
+		if msg.Type == gsp_tcp.MsgType_HeartBeat {
 			e.heartBeatTime = time.Now()
-		case gsp_tcp.MsgType_Forward:
+		} else {
 			e.task <- msg
 		}
 	}

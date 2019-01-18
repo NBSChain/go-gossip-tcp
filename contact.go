@@ -45,6 +45,10 @@ func (node *GspCtrlNode) voteTheContact(data []byte) error {
 
 func (node *GspCtrlNode) asContactNode(nodeId, ip string) error {
 
+	if _, ok := node.outView[nodeId]; ok {
+		return EDuplicateSub
+	}
+
 	node.broadCast(nodeId, ip)
 
 	if err := node.notifyApplier(nodeId, ip); err != nil {
@@ -52,6 +56,17 @@ func (node *GspCtrlNode) asContactNode(nodeId, ip string) error {
 	}
 
 	return nil
+}
+
+func (node *GspCtrlNode) getVote(msg *gsp_tcp.CtrlMsg) error {
+	vote := msg.Vote
+	ttl := vote.TTL - 1
+	if ttl <= 0 {
+		return node.asContactNode(vote.NodeId, vote.IP)
+	}
+
+	data := node.VoteMSG(vote.NodeId, vote.IP, ttl)
+	return node.voteTheContact(data)
 }
 
 func (node *GspCtrlNode) broadCast(nodeId, ip string) {
@@ -149,6 +164,7 @@ func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
 	)
 
 	for _, item := range node.outView {
+
 		sum += item.probability
 		if p < sum {
 			return item
@@ -156,6 +172,8 @@ func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
 		if index == 0 {
 			defaultNode = item
 		}
+
+		index++
 	}
 
 	return defaultNode

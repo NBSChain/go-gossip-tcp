@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	conf     *GspConf = nil
-	logger            = utils.GetLogInstance()
-	ESelfReq          = fmt.Errorf("it's a soliloquy")
+	conf          *GspConf = nil
+	logger                 = utils.GetLogInstance()
+	ESelfReq               = fmt.Errorf("it's a soliloquy")
+	EDuplicateSub          = fmt.Errorf("I have accept this sub as contact")
 )
 
 type GspConf struct {
@@ -108,11 +109,39 @@ ReTry:
 	}
 }
 
+func (node *GspCtrlNode) msgProcessor() {
+
+	for {
+		var err error
+
+		select {
+
+		case msg := <-node.msgTask:
+			switch msg.Type {
+			case gsp_tcp.MsgType_VoteContact:
+				err = node.getVote(msg)
+			case gsp_tcp.MsgType_Forward:
+				err = node.getForward(msg)
+			}
+
+		case <-node.ctx.Done():
+			logger.Warning("exist message process thread......")
+			return
+		}
+
+		if err != nil {
+			logger.Debug("msg process err:->", err)
+		}
+	}
+}
+
 func (node *GspCtrlNode) Run() {
 
 	go node.connReceiver()
 
 	go node.gossipManager()
+
+	go node.msgProcessor()
 
 	select {
 	case <-node.ctx.Done():
@@ -168,4 +197,16 @@ func (node *GspCtrlNode) connHandle(conn net.Conn) {
 	}
 
 	logger.Debug("one connHandle exit:->", conn.RemoteAddr().String(), err)
+}
+
+func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
+	forward := msg.Forward
+	nodeId := forward.NodeId
+
+	_, ok := node.outView[nodeId]
+	if ok {
+
+	}
+
+	return nil
 }
