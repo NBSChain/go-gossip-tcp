@@ -2,14 +2,16 @@ package tcpgossip
 
 import (
 	"github.com/NBSChain/go-gossip-tcp/pbs"
+	"math/rand"
 	"net"
+	"time"
 )
 
 func (node *GspCtrlNode) asGenesisNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	defer conn.Close()
 	logger.Debug("oh, I am the Genesis node:->", msg)
 
-	if _, err := conn.Write(node.AckMSG()); err != nil {
+	if _, err := conn.Write(node.SubAckMSg()); err != nil {
 		logger.Warning("write sub ack back err :->", err)
 		return err
 	}
@@ -32,7 +34,13 @@ func (node *GspCtrlNode) asGenesisNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) erro
 
 func (node *GspCtrlNode) voteTheContact(data []byte) error {
 
-	return nil
+	node.normalizeProbability()
+
+	item := node.getRandomNodeByProb()
+
+	logger.Debug("vote the right contact:->", item.peerID)
+
+	return item.send(data)
 }
 
 func (node *GspCtrlNode) asContactNode(nodeId, ip string) error {
@@ -89,11 +97,66 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 		return err
 	}
 
-	e := NewViewEntity(conn, ip, nodeId, node.msgTask)
+	e := newViewEntity(conn, ip, nodeId, node.msgTask)
 	node.outView[nodeId] = e
 	node.inView[nodeId] = e
+
+	e.probability = node.averageProbability()
 
 	node.ShowViews()
 
 	return nil
+}
+
+func (node *GspCtrlNode) averageProbability() float64 {
+	if len(node.outView) == 0 {
+		return 1.0
+	}
+
+	var sum float64
+	for _, item := range node.outView {
+		sum += item.probability
+	}
+
+	return sum / float64(len(node.outView))
+}
+
+func (node *GspCtrlNode) normalizeProbability() {
+
+	if len(node.outView) == 0 {
+		return
+	}
+
+	var sum float64
+	for _, item := range node.outView {
+		sum += item.probability
+	}
+
+	for _, item := range node.outView {
+		item.probability = item.probability / sum
+	}
+}
+
+func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
+
+	rand.Seed(time.Now().UnixNano())
+
+	var (
+		p           = rand.Float64()
+		sum         = 0.0
+		index       = 0
+		defaultNode *ViewEntity
+	)
+
+	for _, item := range node.outView {
+		sum += item.probability
+		if p < sum {
+			return item
+		}
+		if index == 0 {
+			defaultNode = item
+		}
+	}
+
+	return defaultNode
 }

@@ -54,7 +54,7 @@ func (e *ViewEntity) reading() {
 	}
 }
 
-func NewViewEntity(c net.Conn, ip, id string, t chan *gsp_tcp.CtrlMsg) *ViewEntity {
+func newViewEntity(c net.Conn, ip, id string, t chan *gsp_tcp.CtrlMsg) *ViewEntity {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	node := &ViewEntity{
@@ -71,6 +71,15 @@ func NewViewEntity(c net.Conn, ip, id string, t chan *gsp_tcp.CtrlMsg) *ViewEnti
 
 	go node.reading()
 	return node
+}
+
+func (e *ViewEntity) send(msg []byte) error {
+
+	if _, err := e.conn.Write(msg); err != nil {
+		logger.Warning("send msg err :->", err)
+		return err
+	}
+	return nil
 }
 
 func (e *ViewEntity) Close() {
@@ -105,6 +114,13 @@ func (node *GspCtrlNode) removeViewEntity(id string) {
 	}
 
 	node.ShowViews()
+
+	if len(node.inView) == 0 {
+		if err := node.Subscribe(node.SubMsg(true)); err != nil {
+			logger.Warning("resubscribe err:->", err)
+		}
+		logger.Debug("no input view entities and resubscribe now")
+	}
 }
 
 func (node *GspCtrlNode) sendHeartBeat() {

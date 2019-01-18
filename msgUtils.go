@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func (node *GspCtrlNode) AckMSG() []byte {
+func (node *GspCtrlNode) SubAckMSg() []byte {
 
 	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
 		Type: gsp_tcp.MsgType_SubAck,
@@ -33,7 +33,7 @@ func (node *GspCtrlNode) SubMsg(isReSub bool) []byte {
 
 func (node *GspCtrlNode) VoteMSG(nodeId, ip string, ttl int32) []byte {
 	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
-		Type: gsp_tcp.MsgType_Forward,
+		Type: gsp_tcp.MsgType_VoteContact,
 		Vote: &gsp_tcp.Vote{
 			NodeId: nodeId,
 			IP:     ip,
