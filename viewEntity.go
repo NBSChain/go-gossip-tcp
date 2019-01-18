@@ -9,13 +9,15 @@ import (
 )
 
 type ViewEntity struct {
-	ok     bool
+	ok bool
+
 	peerID string
 	peerIP string
 
 	ctx    context.Context
 	closer context.CancelFunc
 	conn   net.Conn
+	task   chan *gsp_tcp.CtrlMsg
 
 	probability   float64
 	heartBeatTime time.Time
@@ -42,20 +44,29 @@ func (e *ViewEntity) reading() {
 			return
 		}
 
-		logger.Debug("connection node received control msgManager:->", msg)
+		logger.Debug("view entity node received :->", msg)
+		switch msg.Type {
+		case gsp_tcp.MsgType_HeartBeat:
+			e.heartBeatTime = time.Now()
+		case gsp_tcp.MsgType_Forward:
+			e.task <- msg
+		}
 	}
 }
 
-func NewViewEntity(c net.Conn, ip, id string) *ViewEntity {
+func NewViewEntity(c net.Conn, ip, id string, t chan *gsp_tcp.CtrlMsg) *ViewEntity {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	node := &ViewEntity{
-		ctx:    ctx,
-		closer: cancel,
-		conn:   c,
-		ok:     true,
-		peerID: id,
-		peerIP: ip,
+		ctx:           ctx,
+		closer:        cancel,
+		conn:          c,
+		ok:            true,
+		peerID:        id,
+		peerIP:        ip,
+		expiredTime:   time.Now().Add(conf.ExpireTime),
+		heartBeatTime: time.Now(),
+		task:          t,
 	}
 
 	go node.reading()
@@ -99,8 +110,14 @@ func (node *GspCtrlNode) removeViewEntity(id string) {
 func (node *GspCtrlNode) sendHeartBeat() {
 
 	data := node.HeartBeatMsg()
-
+	now := time.Now()
 	for id, item := range node.outView {
+
+		if now.After(item.expiredTime) {
+			logger.Warning("subscribe expired:->", id)
+			node.removeViewEntity(id)
+			continue
+		}
 
 		if _, err := item.conn.Write(data); err != nil {
 			logger.Warning("sending heart beat err:->", id, err)

@@ -21,10 +21,11 @@ type GspConf struct {
 	GenesisIP                string //
 	TCPServicePort           int    //= 13001
 	GossipControlMessageSize int
+	MaxViewItem              int
 	SubTimeOut               time.Duration
 	RetrySubInterval         time.Duration
 	HeartBeat                time.Duration
-	IsolateCheck             time.Duration
+	ExpireTime               time.Duration
 }
 
 type GspCtrlNode struct {
@@ -33,6 +34,7 @@ type GspCtrlNode struct {
 
 	nodeId      string
 	serviceConn *net.TCPListener
+	msgTask     chan *gsp_tcp.CtrlMsg
 	outView     map[string]*ViewEntity
 	inView      map[string]*ViewEntity
 }
@@ -43,6 +45,7 @@ func newGspNode() *GspCtrlNode {
 	node := &GspCtrlNode{
 		ctx:     ctx,
 		cancel:  cl,
+		msgTask: make(chan *gsp_tcp.CtrlMsg, conf.MaxViewItem),
 		outView: make(map[string]*ViewEntity),
 		inView:  make(map[string]*ViewEntity),
 	}

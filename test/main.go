@@ -49,10 +49,11 @@ func mainRun(cmd *cobra.Command, args []string) {
 		GossipControlMessageSize: 1 << 12,
 		GenesisIP:                genesisIp,
 		TCPServicePort:           servicePort,
+		MaxViewItem:              20,
 		SubTimeOut:               time.Second * 4,
 		RetrySubInterval:         time.Second * 15,
 		HeartBeat:                time.Second * 100,
-		IsolateCheck:             time.Second * 300,
+		ExpireTime:               time.Second * 300,
 	}
 
 	node := tcpgossip.GetInstance()

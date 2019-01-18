@@ -31,6 +31,7 @@ func (node *GspCtrlNode) asGenesisNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) erro
 }
 
 func (node *GspCtrlNode) voteTheContact(data []byte) error {
+
 	return nil
 }
 
@@ -54,6 +55,7 @@ func (node *GspCtrlNode) broadCast(nodeId, ip string) {
 	}
 
 	data := node.FwdSubMSG(nodeId, ip)
+
 	for id, e := range node.outView {
 
 		if _, err := e.conn.Write(data); err != nil {
@@ -87,7 +89,7 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 		return err
 	}
 
-	e := NewViewEntity(conn, ip, nodeId)
+	e := NewViewEntity(conn, ip, nodeId, node.msgTask)
 	node.outView[nodeId] = e
 	node.inView[nodeId] = e
 
