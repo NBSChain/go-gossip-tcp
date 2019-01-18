@@ -5,15 +5,21 @@ import (
 	"github.com/NBSChain/go-gossip-tcp/pbs"
 	"github.com/gogo/protobuf/proto"
 	"net"
+	"time"
 )
 
 type ViewEntity struct {
 	ok     bool
 	peerID string
 	peerIP string
+
 	ctx    context.Context
 	closer context.CancelFunc
 	conn   net.Conn
+
+	probability   float64
+	heartBeatTime time.Time
+	expiredTime   time.Time
 }
 
 func (e *ViewEntity) reading() {
@@ -86,6 +92,8 @@ func (node *GspCtrlNode) removeViewEntity(id string) {
 		delete(node.outView, id)
 		item.Close()
 	}
+
+	node.ShowViews()
 }
 
 func (node *GspCtrlNode) sendHeartBeat() {

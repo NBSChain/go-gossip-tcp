@@ -17,6 +17,7 @@ var (
 )
 
 type GspConf struct {
+	NodeId                   string
 	GenesisIP                string //
 	TCPServicePort           int    //= 13001
 	GossipControlMessageSize int
@@ -36,13 +37,12 @@ type GspCtrlNode struct {
 	inView      map[string]*ViewEntity
 }
 
-func NewGspNode(nodeId string) *GspCtrlNode {
+func newGspNode() *GspCtrlNode {
 	ctx, cl := context.WithCancel(context.Background())
 
 	node := &GspCtrlNode{
 		ctx:     ctx,
 		cancel:  cl,
-		nodeId:  nodeId,
 		outView: make(map[string]*ViewEntity),
 		inView:  make(map[string]*ViewEntity),
 	}
@@ -51,6 +51,7 @@ func NewGspNode(nodeId string) *GspCtrlNode {
 
 func (node *GspCtrlNode) Init(c *GspConf) error {
 	conf = c
+	node.nodeId = c.NodeId
 
 	conn, err := net.ListenTCP("tcp4", &net.TCPAddr{
 		Port: conf.TCPServicePort,

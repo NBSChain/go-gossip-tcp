@@ -91,5 +91,7 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 	node.outView[nodeId] = e
 	node.inView[nodeId] = e
 
+	node.ShowViews()
+
 	return nil
 }

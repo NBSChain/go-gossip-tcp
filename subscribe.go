@@ -47,5 +47,7 @@ func (node *GspCtrlNode) subSuccess(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	node.inView[nodeId] = e
 	node.outView[nodeId] = e
 
+	node.ShowViews()
+
 	return nil
 }

@@ -41,9 +41,11 @@ func main() {
 }
 
 func mainRun(cmd *cobra.Command, args []string) {
+
 	msgMaker := NewMsgManager()
-	node := tcpgossip.NewGspNode(msgMaker.nodeId)
+
 	c := &tcpgossip.GspConf{
+		NodeId:                   msgMaker.nodeId,
 		GossipControlMessageSize: 1 << 12,
 		GenesisIP:                genesisIp,
 		TCPServicePort:           servicePort,
@@ -53,10 +55,10 @@ func mainRun(cmd *cobra.Command, args []string) {
 		IsolateCheck:             time.Second * 300,
 	}
 
+	node := tcpgossip.GetInstance()
 	if err := node.Init(c); err != nil {
 		panic(err)
 	}
-
 	node.Run()
 }
 
