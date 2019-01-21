@@ -88,6 +88,8 @@ func (e *ViewEntity) send(msg []byte) error {
 }
 
 func (e *ViewEntity) Close() {
+	e.Lock()
+	defer e.Unlock()
 
 	if !e.ok {
 		logger.Debug("try to cancel a closed connection node:->", e.peerID)
