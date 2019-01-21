@@ -38,7 +38,7 @@ func (node *GspCtrlNode) voteTheContact(data []byte) error {
 
 	item := node.getRandomNodeByProb()
 
-	logger.Debug("vote the right contact:->", item.peerID)
+	logger.Debug("vote a contact:->", item.peerID)
 
 	return item.send(data)
 }
@@ -93,7 +93,7 @@ func (node *GspCtrlNode) broadCast(nodeId, ip string) {
 
 func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 
-	logger.Debug("accept you and save infos:->", nodeId, ip)
+	logger.Debug("accept you as contact and save infos:->", nodeId, ip)
 
 	conn, err := net.DialTCP("tcp4", nil, &net.TCPAddr{
 		IP:   net.ParseIP(ip),
@@ -115,6 +115,7 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 
 	e := newViewEntity(conn, ip, nodeId)
 	e.pareNode = node
+
 	node.outLock.Lock()
 	node.outView[nodeId] = e
 	node.outLock.Unlock()
