@@ -44,8 +44,13 @@ func (node *GspCtrlNode) subSuccess(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	}
 
 	e := newViewEntity(conn, contact.IP, contact.NodeId, node.msgTask)
+	node.inLock.Lock()
 	node.inView[nodeId] = e
+	node.inLock.Unlock()
+
+	node.outLock.Lock()
 	node.outView[nodeId] = e
+	node.outLock.Unlock()
 
 	node.ShowViews()
 
