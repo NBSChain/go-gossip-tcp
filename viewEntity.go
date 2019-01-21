@@ -29,7 +29,7 @@ type ViewEntity struct {
 func (e *ViewEntity) reading() {
 
 	logger.Debug("start to read......")
-	defer e.Close()
+	defer e.pareNode.removeViewEntity(e.nodeID)
 
 	for {
 
@@ -97,17 +97,13 @@ func (e *ViewEntity) Close() {
 		logger.Debug("try to cancel a closed connection node:->", e.nodeID)
 		return
 	}
-
 	logger.Info("the connection node closed:->", e.nodeID)
 
 	e.ok = false
 	e.closer()
-
 	if err := e.conn.Close(); err != nil {
 		logger.Warning("failed to cancel connection node:->", e.nodeID)
 	}
-
-	e.pareNode.removeViewEntity(e.nodeID)
 }
 
 func (node *GspCtrlNode) removeViewEntity(id string) {
