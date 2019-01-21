@@ -309,7 +309,7 @@ func (node *GspCtrlNode) acceptForwarded(msg *gsp_tcp.CtrlMsg) error {
 	conn, err := node.pingMsg(nil, &net.TCPAddr{
 		IP:   net.ParseIP(forward.IP),
 		Port: conf.TCPServicePort,
-	}, node.WelcomeMsg())
+	}, 0, node.WelcomeMsg())
 
 	if err != nil {
 		return err

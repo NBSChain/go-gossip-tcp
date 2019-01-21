@@ -124,7 +124,7 @@ func (node *GspCtrlNode) pingPongMsg(lAddr, rAddr *net.TCPAddr, timeOut time.Dur
 	return msg, nil
 }
 
-func (node *GspCtrlNode) pingMsg(lAddr, rAddr *net.TCPAddr, data []byte) (*net.TCPConn, error) {
+func (node *GspCtrlNode) pingMsg(lAddr, rAddr *net.TCPAddr, timeOut time.Duration, data []byte) (*net.TCPConn, error) {
 
 	conn, err := net.DialTCP("tcp4", lAddr, rAddr)
 	if err != nil {
@@ -132,9 +132,11 @@ func (node *GspCtrlNode) pingMsg(lAddr, rAddr *net.TCPAddr, data []byte) (*net.T
 		return nil, err
 	}
 
-	if err := conn.SetDeadline(time.Now().Add(conf.CtrlMsgTimeOut)); err != nil {
-		conn.Close()
-		return nil, err
+	if timeOut > 0 {
+		if err := conn.SetWriteDeadline(time.Now().Add(timeOut)); err != nil {
+			conn.Close()
+			return nil, err
+		}
 	}
 
 	if _, err := conn.Write(data); err != nil {

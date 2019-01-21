@@ -96,7 +96,7 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 	conn, err := node.pingMsg(nil, &net.TCPAddr{
 		IP:   net.ParseIP(ip),
 		Port: conf.TCPServicePort,
-	}, node.ContactMsg())
+	}, 0, node.ContactMsg())
 	if err != nil {
 		logger.Warning("failed to act as contact node:->", err)
 		return err
