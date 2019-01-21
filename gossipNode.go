@@ -8,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"math/rand"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -37,7 +38,9 @@ type GspCtrlNode struct {
 	nodeId      string
 	serviceConn *net.TCPListener
 	msgTask     chan *gsp_tcp.CtrlMsg
+	outLock     sync.RWMutex
 	outView     map[string]*ViewEntity
+	inLock      sync.RWMutex
 	inView      map[string]*ViewEntity
 }
 

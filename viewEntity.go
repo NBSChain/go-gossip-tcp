@@ -5,10 +5,12 @@ import (
 	"github.com/NBSChain/go-gossip-tcp/pbs"
 	"github.com/gogo/protobuf/proto"
 	"net"
+	"sync"
 	"time"
 )
 
 type ViewEntity struct {
+	sync.RWMutex
 	ok bool
 
 	peerID string
@@ -47,7 +49,10 @@ func (e *ViewEntity) reading() {
 		logger.Debug("view entity node received :->", msg)
 
 		if msg.Type == gsp_tcp.MsgType_HeartBeat {
+			e.Lock()
 			e.heartBeatTime = time.Now()
+			e.Unlock()
+
 		} else {
 			e.task <- msg
 		}
@@ -127,6 +132,10 @@ func (node *GspCtrlNode) sendHeartBeat() {
 
 	data := node.HeartBeatMsg()
 	now := time.Now()
+
+	node.outLock.RLock()
+	defer node.outLock.Unlock()
+
 	for id, item := range node.outView {
 
 		if now.After(item.expiredTime) {

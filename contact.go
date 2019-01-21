@@ -113,8 +113,13 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 	}
 
 	e := newViewEntity(conn, ip, nodeId, node.msgTask)
+	node.outLock.Lock()
 	node.outView[nodeId] = e
+	node.outLock.Unlock()
+
+	node.inLock.Lock()
 	node.inView[nodeId] = e
+	node.inLock.Unlock()
 
 	e.probability = node.averageProbability()
 

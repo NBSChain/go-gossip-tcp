@@ -8,6 +8,9 @@ import (
 func (e *ViewEntity) String() string {
 	format := utils.GetConfig().SysTimeFormat
 
+	e.RLock()
+	defer e.RUnlock()
+
 	return fmt.Sprintf("------------%s------------\n"+
 		"|%-15s:%20.2f|\n"+
 		"|%-15s:%20s|\n"+
