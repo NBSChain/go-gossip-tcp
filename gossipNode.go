@@ -47,7 +47,6 @@ func newGspNode() *GspCtrlNode {
 	node := &GspCtrlNode{
 		ctx:     ctx,
 		cancel:  cl,
-		msgTask: make(chan *gsp_tcp.CtrlMsg, conf.MaxViewItem),
 		outView: make(map[string]*ViewEntity),
 		inView:  make(map[string]*ViewEntity),
 	}
@@ -56,6 +55,8 @@ func newGspNode() *GspCtrlNode {
 
 func (node *GspCtrlNode) Init(c *GspConf) error {
 	conf = c
+
+	node.msgTask = make(chan *gsp_tcp.CtrlMsg, conf.MaxViewItem)
 	node.nodeId = c.NodeId
 
 	conn, err := net.ListenTCP("tcp4", &net.TCPAddr{
