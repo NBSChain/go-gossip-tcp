@@ -17,7 +17,7 @@ func (e *ViewEntity) String() string {
 		"|%-15s:%20s|\n"+
 		"|%-15s:%20s|\n"+
 		"-----------------------------------------------------------------------\n",
-		e.peerID,
+		e.nodeID,
 		"probability",
 		e.probability,
 		"peerIP",

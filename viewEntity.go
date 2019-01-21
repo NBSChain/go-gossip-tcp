@@ -13,7 +13,7 @@ type ViewEntity struct {
 	sync.RWMutex
 	ok bool
 
-	peerID string
+	nodeID string
 	peerIP string
 
 	ctx      context.Context
@@ -37,7 +37,7 @@ func (e *ViewEntity) reading() {
 		n, err := e.conn.Read(buffer)
 
 		if err != nil {
-			logger.Warning("connection node read err:->", e.peerID)
+			logger.Warning("connection node read err:->", e.nodeID)
 			return
 		}
 
@@ -70,7 +70,7 @@ func (node *GspCtrlNode) newViewEntity(c net.Conn, ip, id string) *ViewEntity {
 		closer:        cancel,
 		conn:          c,
 		ok:            true,
-		peerID:        id,
+		nodeID:        id,
 		peerIP:        ip,
 		expiredTime:   time.Now().Add(conf.ExpireTime),
 		heartBeatTime: time.Now(),
@@ -94,31 +94,37 @@ func (e *ViewEntity) Close() {
 	defer e.Unlock()
 
 	if !e.ok {
-		logger.Debug("try to cancel a closed connection node:->", e.peerID)
+		logger.Debug("try to cancel a closed connection node:->", e.nodeID)
 		return
 	}
 
-	logger.Info("the connection node closed:->", e.peerID)
+	logger.Info("the connection node closed:->", e.nodeID)
 
 	e.ok = false
 	e.closer()
 
 	if err := e.conn.Close(); err != nil {
-		logger.Warning("failed to cancel connection node:->", e.peerID)
+		logger.Warning("failed to cancel connection node:->", e.nodeID)
 	}
+
+	e.pareNode.removeViewEntity(e.nodeID)
 }
 
 func (node *GspCtrlNode) removeViewEntity(id string) {
 
 	if item, ok := node.outView[id]; ok {
-		logger.Debug("remove from out put view :->", item.peerID)
+		logger.Debug("remove from out put view :->", item.nodeID)
+		node.outLock.Lock()
 		delete(node.outView, id)
+		node.outLock.Unlock()
 		item.Close()
 	}
 
 	if item, ok := node.inView[id]; ok {
-		logger.Debug("remove from in put view :->", item.peerID)
-		delete(node.outView, id)
+		logger.Debug("remove from in put view :->", item.nodeID)
+		node.inLock.Lock()
+		delete(node.inView, id)
+		node.inLock.Unlock()
 		item.Close()
 	}
 

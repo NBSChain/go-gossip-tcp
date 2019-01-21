@@ -36,7 +36,7 @@ func (node *GspCtrlNode) voteTheContact(data []byte) error {
 
 	item := node.getRandomNodeByProb()
 
-	logger.Debug("vote a contact:->", item.peerID)
+	logger.Debug("vote a contact:->", item.nodeID)
 
 	return item.send(data)
 }

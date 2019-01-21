@@ -7,20 +7,16 @@ import (
 	"time"
 )
 
-func (node *GspCtrlNode) simpleId(typ gsp_tcp.MsgType) []byte {
+func (node *GspCtrlNode) SubAckMSg() []byte {
 
 	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
-		Type: typ,
+		Type: gsp_tcp.MsgType_SubAck,
 		SubAck: &gsp_tcp.ID{
 			NodeId: node.nodeId,
 		},
 	})
 
 	return data
-}
-
-func (node *GspCtrlNode) SubAckMSg() []byte {
-	return node.simpleId(gsp_tcp.MsgType_SubAck)
 }
 
 func (node *GspCtrlNode) SubMsg(isReSub bool) []byte {
@@ -60,15 +56,37 @@ func (node *GspCtrlNode) FwdSubMSG(nodeId, ip string) []byte {
 }
 
 func (node *GspCtrlNode) ContactMsg() []byte {
-	return node.simpleId(gsp_tcp.MsgType_GotContact)
+
+	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
+		Type: gsp_tcp.MsgType_GotContact,
+		GotContact: &gsp_tcp.ID{
+			NodeId: node.nodeId,
+		},
+	})
+
+	return data
 }
 
 func (node *GspCtrlNode) HeartBeatMsg() []byte {
-	return node.simpleId(gsp_tcp.MsgType_HeartBeat)
+	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
+		Type: gsp_tcp.MsgType_HeartBeat,
+		HeartBeat: &gsp_tcp.ID{
+			NodeId: node.nodeId,
+		},
+	})
+
+	return data
 }
 
 func (node *GspCtrlNode) WelcomeMsg() []byte {
-	return node.simpleId(gsp_tcp.MsgType_WelCome)
+	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
+		Type: gsp_tcp.MsgType_WelCome,
+		Welcome: &gsp_tcp.ID{
+			NodeId: node.nodeId,
+		},
+	})
+
+	return data
 }
 
 func (node *GspCtrlNode) pingPongMsg(lAddr, rAddr *net.TCPAddr, timeOut time.Duration, data []byte) (*gsp_tcp.CtrlMsg, error) {

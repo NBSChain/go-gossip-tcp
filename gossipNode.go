@@ -216,7 +216,7 @@ func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
 	_, ok := node.outView[nodeId]
 	if ok || randProb > prob {
 		item := node.choseRandom()
-		logger.Debug("introduce you to my friend:->", item.peerID, ok, randProb, prob)
+		logger.Debug("introduce you to my friend:->", item.nodeID, ok, randProb, prob)
 		data, _ := proto.Marshal(msg)
 		return item.send(data)
 	}
@@ -272,7 +272,7 @@ func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
 	for _, item := range node.outView {
 
 		sum += item.probability
-		logger.Debug("total sum, prob:->", sum, item.probability, item.peerID)
+		logger.Debug("total sum, prob:->", sum, item.probability, item.nodeID)
 
 		if p < sum {
 			return item
