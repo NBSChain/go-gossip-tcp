@@ -86,8 +86,10 @@ func (node *GspCtrlNode) pingPongMsg(lAddr, rAddr *net.TCPAddr, timeOut time.Dur
 	}
 	defer conn.Close()
 
-	if err := conn.SetDeadline(time.Now().Add(timeOut)); err != nil {
-		return nil, err
+	if timeOut > 0 {
+		if err := conn.SetDeadline(time.Now().Add(timeOut)); err != nil {
+			return nil, err
+		}
 	}
 
 	if _, err := conn.Write(data); err != nil {

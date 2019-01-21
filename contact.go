@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func (node *GspCtrlNode) asGenesisNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
+func (node *GspCtrlNode) asProxyNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	defer conn.Close()
 	logger.Debug("oh, I am the Genesis node:->", msg)
 
@@ -168,9 +168,12 @@ func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
 		defaultNode *ViewEntity
 	)
 
+	logger.Debug("random mode prob:->", p)
 	for _, item := range node.outView {
 
 		sum += item.probability
+		logger.Debug("total sum, prob:->", sum, item.probability, item.peerID)
+
 		if p < sum {
 			return item
 		}

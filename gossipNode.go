@@ -196,7 +196,7 @@ func (node *GspCtrlNode) connHandle(conn net.Conn) {
 
 	switch msg.Type {
 	case gsp_tcp.MsgType_SubInit:
-		err = node.asGenesisNode(msg, conn)
+		err = node.asProxyNode(msg, conn)
 	case gsp_tcp.MsgType_GotContact:
 		err = node.subSuccess(msg, conn)
 	}
