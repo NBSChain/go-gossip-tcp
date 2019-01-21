@@ -59,11 +59,13 @@ func (e *ViewEntity) reading() {
 	}
 }
 
-func newViewEntity(c net.Conn, ip, id string) *ViewEntity {
+func (node *GspCtrlNode) newViewEntity(c net.Conn, ip, id string) *ViewEntity {
 
 	logger.Debug("create a new item :->", ip, id)
 	ctx, cancel := context.WithCancel(context.Background())
-	node := &ViewEntity{
+	e := &ViewEntity{
+		pareNode:      node,
+		probability:   node.averageProbability(),
 		ctx:           ctx,
 		closer:        cancel,
 		conn:          c,
@@ -74,8 +76,8 @@ func newViewEntity(c net.Conn, ip, id string) *ViewEntity {
 		heartBeatTime: time.Now(),
 	}
 
-	go node.reading()
-	return node
+	go e.reading()
+	return e
 }
 
 func (e *ViewEntity) send(msg []byte) error {

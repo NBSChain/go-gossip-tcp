@@ -7,16 +7,20 @@ import (
 	"time"
 )
 
-func (node *GspCtrlNode) SubAckMSg() []byte {
+func (node *GspCtrlNode) simpleId(typ gsp_tcp.MsgType) []byte {
 
 	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
-		Type: gsp_tcp.MsgType_SubAck,
+		Type: typ,
 		SubAck: &gsp_tcp.ID{
 			NodeId: node.nodeId,
 		},
 	})
 
 	return data
+}
+
+func (node *GspCtrlNode) SubAckMSg() []byte {
+	return node.simpleId(gsp_tcp.MsgType_SubAck)
 }
 
 func (node *GspCtrlNode) SubMsg(isReSub bool) []byte {
@@ -52,36 +56,26 @@ func (node *GspCtrlNode) FwdSubMSG(nodeId, ip string) []byte {
 			IP:     ip,
 		},
 	})
-
 	return data
 }
 
-func (node *GspCtrlNode) ContactMsg(ip string) []byte {
-	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
-		Type: gsp_tcp.MsgType_GotContact,
-		GotContact: &gsp_tcp.IDWithIP{
-			NodeId: node.nodeId,
-			IP:     ip,
-		},
-	})
-	return data
+func (node *GspCtrlNode) ContactMsg() []byte {
+	return node.simpleId(gsp_tcp.MsgType_GotContact)
 }
 
 func (node *GspCtrlNode) HeartBeatMsg() []byte {
-	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
-		Type: gsp_tcp.MsgType_HeartBeat,
-		HeartBeat: &gsp_tcp.ID{
-			NodeId: node.nodeId,
-		},
-	})
-	return data
+	return node.simpleId(gsp_tcp.MsgType_HeartBeat)
+}
+
+func (node *GspCtrlNode) WelcomeMsg() []byte {
+	return node.simpleId(gsp_tcp.MsgType_WelCome)
 }
 
 func (node *GspCtrlNode) pingPongMsg(lAddr, rAddr *net.TCPAddr, timeOut time.Duration, data []byte) (*gsp_tcp.CtrlMsg, error) {
 
 	conn, err := net.DialTCP("tcp4", lAddr, rAddr)
 	if err != nil {
-		logger.Warning("connect to genesis node err:->", err)
+		logger.Warning("connect to remote err:->", err, rAddr.String())
 		return nil, err
 	}
 	defer conn.Close()
@@ -93,14 +87,14 @@ func (node *GspCtrlNode) pingPongMsg(lAddr, rAddr *net.TCPAddr, timeOut time.Dur
 	}
 
 	if _, err := conn.Write(data); err != nil {
-		logger.Warning("write subscribe data err:->", err)
+		logger.Warning("write data err:->", err)
 		return nil, err
 	}
 
 	buffer := make([]byte, conf.GossipControlMessageSize)
 	n, err := conn.Read(buffer)
 	if err != nil {
-		logger.Warning("subscribe err:->", err)
+		logger.Warning("read err:->", err)
 		return nil, err
 	}
 
@@ -110,4 +104,26 @@ func (node *GspCtrlNode) pingPongMsg(lAddr, rAddr *net.TCPAddr, timeOut time.Dur
 	}
 
 	return msg, nil
+}
+
+func (node *GspCtrlNode) pingMsg(lAddr, rAddr *net.TCPAddr, data []byte) (*net.TCPConn, error) {
+
+	conn, err := net.DialTCP("tcp4", lAddr, rAddr)
+	if err != nil {
+		logger.Warning("connect to remote err:->", err, rAddr.String())
+		return nil, err
+	}
+
+	if err := conn.SetDeadline(time.Now().Add(conf.CtrlMsgTimeOut)); err != nil {
+		conn.Close()
+		return nil, err
+	}
+
+	if _, err := conn.Write(data); err != nil {
+		conn.Close()
+		logger.Warning("write data err:->", err)
+		return nil, err
+	}
+
+	return conn, nil
 }

@@ -9,6 +9,7 @@ enum MsgType{
     VoteContact  = 3;
     GotContact   = 4;
     HeartBeat    = 5;
+    WelCome      = 6;
     SubAck      = 21;
 }
 
@@ -37,8 +38,9 @@ message CtrlMsg{
     Subscribe   Subscribe   = 2;
     Vote        Vote        = 3;
     IDWithIP    Forward     = 5;
-    IDWithIP    GotContact  = 4;
+    ID          GotContact  = 4;
     ID          HeartBeat   = 6;
+    ID          Welcome     = 7;
 
     ID          SubAck      = 21;
 }

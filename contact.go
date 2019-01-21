@@ -19,7 +19,7 @@ func (node *GspCtrlNode) asProxyNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) error 
 		return ESelfReq
 	}
 
-	ttl := int32(len(node.outView))
+	ttl := int32(len(node.outView)) * 2
 	rAddr := conn.RemoteAddr().String()
 	ip, _, _ := net.SplitHostPort(rAddr)
 
@@ -93,27 +93,16 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 
 	logger.Debug("accept you as contact and save infos:->", nodeId, ip)
 
-	conn, err := net.DialTCP("tcp4", nil, &net.TCPAddr{
+	conn, err := node.pingMsg(nil, &net.TCPAddr{
 		IP:   net.ParseIP(ip),
 		Port: conf.TCPServicePort,
-	})
-
+	}, node.ContactMsg())
 	if err != nil {
 		logger.Warning("failed to act as contact node:->", err)
 		return err
 	}
 
-	myIp, _, _ := net.SplitHostPort(conn.LocalAddr().String())
-
-	if _, err := conn.Write(node.ContactMsg(myIp)); err != nil {
-		logger.Warning("err when notify the subscriber:->", err)
-		conn.Close()
-		return err
-	}
-
-	e := newViewEntity(conn, ip, nodeId)
-	e.pareNode = node
-	e.probability = node.averageProbability()
+	e := node.newViewEntity(conn, ip, nodeId)
 
 	node.outLock.Lock()
 	node.outView[nodeId] = e

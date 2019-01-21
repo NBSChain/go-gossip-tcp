@@ -15,7 +15,7 @@ import (
 var (
 	conf          *GspConf = nil
 	logger                 = utils.GetLogInstance()
-	ESelfReq               = fmt.Errorf("it's a soliloquy")
+	ESelfReq               = fmt.Errorf("it's myself")
 	EDuplicateSub          = fmt.Errorf("I have accept this sub as contact")
 )
 
@@ -25,7 +25,7 @@ type GspConf struct {
 	TCPServicePort           int    //= 13001
 	GossipControlMessageSize int
 	MaxViewItem              int
-	SubTimeOut               time.Duration
+	CtrlMsgTimeOut           time.Duration
 	RetrySubInterval         time.Duration
 	HeartBeat                time.Duration
 	ExpireTime               time.Duration
@@ -199,6 +199,8 @@ func (node *GspCtrlNode) connHandle(conn net.Conn) {
 		err = node.asProxyNode(msg, conn)
 	case gsp_tcp.MsgType_GotContact:
 		err = node.subSuccess(msg, conn)
+	case gsp_tcp.MsgType_WelCome:
+		err = node.beWelcomed(msg, conn)
 	}
 
 	logger.Debug("one connHandle exit:->", conn.RemoteAddr().String(), err)
@@ -212,16 +214,18 @@ func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
 	randProb := rand.Float64()
 
 	_, ok := node.outView[nodeId]
-	if ok {
+	if ok || randProb > prob {
 		item := node.choseRandom()
-		logger.Debug("I have got you, so introduce to my friend:->", item.peerID)
+		logger.Debug("introduce you to my friend:->", item.peerID, ok, randProb, prob)
+		data, _ := proto.Marshal(msg)
+		return item.send(data)
 	}
 
-	if randProb < prob {
-
+	if nodeId == node.nodeId {
+		return ESelfReq
 	}
 
-	return nil
+	return node.acceptForwarded(msg)
 }
 
 func (node *GspCtrlNode) averageProbability() float64 {
@@ -298,5 +302,27 @@ func (node *GspCtrlNode) choseRandom() *ViewEntity {
 }
 
 func (node *GspCtrlNode) acceptForwarded(msg *gsp_tcp.CtrlMsg) error {
+
+	forward := msg.Forward
+	nodeId := forward.NodeId
+
+	conn, err := node.pingMsg(nil, &net.TCPAddr{
+		IP:   net.ParseIP(forward.IP),
+		Port: conf.TCPServicePort,
+	}, node.WelcomeMsg())
+
+	if err != nil {
+		return err
+	}
+
+	e := node.newViewEntity(conn, forward.IP, nodeId)
+
+	node.outLock.Lock()
+	node.outView[nodeId] = e
+	node.outLock.Unlock()
+
+	node.ShowViews()
+	logger.Debug("welcome you->", forward)
+
 	return nil
 }

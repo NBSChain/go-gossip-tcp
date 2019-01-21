@@ -13,7 +13,7 @@ func (node *GspCtrlNode) Subscribe(data []byte) error {
 		IP:   net.ParseIP(conf.GenesisIP),
 	}
 
-	msg, err := node.pingPongMsg(nil, rAddr, conf.SubTimeOut, data)
+	msg, err := node.pingPongMsg(nil, rAddr, conf.CtrlMsgTimeOut, data)
 	if err != nil {
 		return err
 	}
@@ -43,9 +43,8 @@ func (node *GspCtrlNode) subSuccess(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 		return fmt.Errorf("duplicate contact notification(%s):->", nodeId)
 	}
 
-	e := newViewEntity(conn, contact.IP, contact.NodeId)
-	e.pareNode = node
-	e.probability = node.averageProbability()
+	ip, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
+	e := node.newViewEntity(conn, ip, contact.NodeId)
 
 	node.inLock.Lock()
 	node.inView[nodeId] = e
@@ -55,6 +54,24 @@ func (node *GspCtrlNode) subSuccess(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	node.outView[nodeId] = e
 	node.outLock.Unlock()
 
+	node.ShowViews()
+
+	return nil
+}
+
+func (node *GspCtrlNode) beWelcomed(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
+
+	welcome := msg.Welcome
+	nodeId := welcome.NodeId
+
+	ip, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
+	e := node.newViewEntity(conn, ip, welcome.NodeId)
+
+	node.inLock.Lock()
+	node.inView[nodeId] = e
+	node.inLock.Unlock()
+
+	logger.Debug("thanks for your welcome:->", nodeId)
 	node.ShowViews()
 
 	return nil
