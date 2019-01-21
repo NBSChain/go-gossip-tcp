@@ -136,7 +136,7 @@ func (node *GspCtrlNode) sendHeartBeat() {
 	now := time.Now()
 
 	node.outLock.RLock()
-	defer node.outLock.Unlock()
+	defer node.outLock.RUnlock()
 
 	for id, item := range node.outView {
 
