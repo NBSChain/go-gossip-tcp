@@ -133,16 +133,17 @@ func (node *GspCtrlNode) pingMsg(lAddr, rAddr *net.TCPAddr, timeOut time.Duratio
 	}
 
 	if timeOut > 0 {
-		if err := conn.SetWriteDeadline(time.Now().Add(timeOut)); err != nil {
-			conn.Close()
-			return nil, err
-		}
+		conn.SetWriteDeadline(time.Now().Add(timeOut))
 	}
 
 	if _, err := conn.Write(data); err != nil {
 		conn.Close()
 		logger.Warning("write data err:->", err)
 		return nil, err
+	}
+
+	if timeOut > 0 {
+		conn.SetWriteDeadline(NoTimeOut)
 	}
 
 	return conn, nil

@@ -14,6 +14,7 @@ import (
 
 var (
 	conf          *GspConf = nil
+	NoTimeOut              = time.Time{}
 	logger                 = utils.GetLogInstance()
 	ESelfReq               = fmt.Errorf("it's myself")
 	EDuplicateSub          = fmt.Errorf("I have accept this sub as contact")

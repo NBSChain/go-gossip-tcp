@@ -41,3 +41,7 @@ func (node *GspCtrlNode) ShowViews() {
 		fmt.Println(item.String())
 	}
 }
+
+func (e *ViewEntity) KeyString() string {
+	return fmt.Sprintf("\nnodeId(%s)--->ip(%s)--->prob(%f)\n", e.nodeID, e.peerIP, e.probability)
+}

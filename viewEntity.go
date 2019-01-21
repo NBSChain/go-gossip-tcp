@@ -37,7 +37,7 @@ func (e *ViewEntity) reading() {
 		n, err := e.conn.Read(buffer)
 
 		if err != nil {
-			logger.Warning("connection node read err:->", e.nodeID)
+			logger.Warning("connection node read err:->", e.nodeID, err)
 			return
 		}
 
