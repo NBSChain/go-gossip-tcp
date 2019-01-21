@@ -9,7 +9,7 @@ import (
 
 func (node *GspCtrlNode) asProxyNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	defer conn.Close()
-	logger.Debug("oh, I am the Genesis node:->", msg)
+	logger.Debug("oh, I am the proxy node:->", msg)
 
 	if _, err := conn.Write(node.SubAckMSg()); err != nil {
 		logger.Warning("write sub ack back err :->", err)
@@ -71,11 +71,12 @@ func (node *GspCtrlNode) getVote(msg *gsp_tcp.CtrlMsg) error {
 
 func (node *GspCtrlNode) broadCast(nodeId, ip string) {
 
-	logger.Debug("prepare to introduce you:->", nodeId, ip)
 	if len(node.outView) == 0 {
-		logger.Debug("I have no friends to introduce to you")
+		logger.Debug("as contact I have no friends to introduce to you")
 		return
 	}
+
+	logger.Debug("I'm your contact and prepare to introduce you:->", nodeId, ip)
 
 	data := node.FwdSubMSG(nodeId, ip)
 
@@ -112,7 +113,8 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 		return err
 	}
 
-	e := newViewEntity(conn, ip, nodeId, node.msgTask)
+	e := newViewEntity(conn, ip, nodeId)
+	e.pareNode = node
 	node.outLock.Lock()
 	node.outView[nodeId] = e
 	node.outLock.Unlock()

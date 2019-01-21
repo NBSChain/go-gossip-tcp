@@ -43,7 +43,8 @@ func (node *GspCtrlNode) subSuccess(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 		return fmt.Errorf("duplicate contact notification(%s):->", nodeId)
 	}
 
-	e := newViewEntity(conn, contact.IP, contact.NodeId, node.msgTask)
+	e := newViewEntity(conn, contact.IP, contact.NodeId)
+	e.pareNode = node
 	node.inLock.Lock()
 	node.inView[nodeId] = e
 	node.inLock.Unlock()

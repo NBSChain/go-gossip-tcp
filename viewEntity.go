@@ -16,10 +16,10 @@ type ViewEntity struct {
 	peerID string
 	peerIP string
 
-	ctx    context.Context
-	closer context.CancelFunc
-	conn   net.Conn
-	task   chan *gsp_tcp.CtrlMsg
+	ctx      context.Context
+	closer   context.CancelFunc
+	conn     net.Conn
+	pareNode *GspCtrlNode
 
 	probability   float64
 	heartBeatTime time.Time
@@ -54,13 +54,14 @@ func (e *ViewEntity) reading() {
 			e.Unlock()
 
 		} else {
-			e.task <- msg
+			e.pareNode.msgTask <- msg
 		}
 	}
 }
 
-func newViewEntity(c net.Conn, ip, id string, t chan *gsp_tcp.CtrlMsg) *ViewEntity {
+func newViewEntity(c net.Conn, ip, id string) *ViewEntity {
 
+	logger.Debug("create a new item :->", ip, id)
 	ctx, cancel := context.WithCancel(context.Background())
 	node := &ViewEntity{
 		ctx:           ctx,
@@ -71,7 +72,6 @@ func newViewEntity(c net.Conn, ip, id string, t chan *gsp_tcp.CtrlMsg) *ViewEnti
 		peerIP:        ip,
 		expiredTime:   time.Now().Add(conf.ExpireTime),
 		heartBeatTime: time.Now(),
-		task:          t,
 	}
 
 	go node.reading()
