@@ -45,6 +45,8 @@ func (node *GspCtrlNode) subSuccess(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 
 	e := newViewEntity(conn, contact.IP, contact.NodeId)
 	e.pareNode = node
+	e.probability = node.averageProbability()
+
 	node.inLock.Lock()
 	node.inView[nodeId] = e
 	node.inLock.Unlock()

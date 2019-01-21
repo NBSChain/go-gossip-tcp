@@ -2,9 +2,7 @@ package tcpgossip
 
 import (
 	"github.com/NBSChain/go-gossip-tcp/pbs"
-	"math/rand"
 	"net"
-	"time"
 )
 
 func (node *GspCtrlNode) asProxyNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
@@ -115,6 +113,7 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 
 	e := newViewEntity(conn, ip, nodeId)
 	e.pareNode = node
+	e.probability = node.averageProbability()
 
 	node.outLock.Lock()
 	node.outView[nodeId] = e
@@ -124,86 +123,7 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 	node.inView[nodeId] = e
 	node.inLock.Unlock()
 
-	e.probability = node.averageProbability()
-
 	node.ShowViews()
 
-	return nil
-}
-
-func (node *GspCtrlNode) averageProbability() float64 {
-	if len(node.outView) == 0 {
-		return 1.0
-	}
-
-	var sum float64
-	for _, item := range node.outView {
-		sum += item.probability
-	}
-
-	return sum / float64(len(node.outView))
-}
-
-func (node *GspCtrlNode) normalizeProbability() {
-
-	if len(node.outView) == 0 {
-		return
-	}
-
-	var sum float64
-	for _, item := range node.outView {
-		sum += item.probability
-	}
-
-	for _, item := range node.outView {
-		item.probability = item.probability / sum
-	}
-}
-
-func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
-
-	rand.Seed(time.Now().UnixNano())
-
-	var (
-		p           = rand.Float64()
-		sum         = 0.0
-		index       = 0
-		defaultNode *ViewEntity
-	)
-
-	logger.Debug("random mode prob:->", p)
-	for _, item := range node.outView {
-
-		sum += item.probability
-		logger.Debug("total sum, prob:->", sum, item.probability, item.peerID)
-
-		if p < sum {
-			return item
-		}
-		if index == 0 {
-			defaultNode = item
-		}
-
-		index++
-	}
-
-	return defaultNode
-}
-
-func (node *GspCtrlNode) choseRandom() *ViewEntity {
-
-	idx := rand.Intn(len(node.outView))
-	i := 0
-
-	for _, item := range node.outView {
-		if i == idx {
-			return item
-		}
-		i++
-	}
-	return nil
-}
-
-func (node *GspCtrlNode) acceptForwarded(msg *gsp_tcp.CtrlMsg) error {
 	return nil
 }
