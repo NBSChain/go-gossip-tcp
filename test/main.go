@@ -53,7 +53,7 @@ func mainRun(cmd *cobra.Command, args []string) {
 		SubTimeOut:               time.Second * 4,
 		RetrySubInterval:         time.Second * 15,
 		HeartBeat:                time.Second * 100,
-		ExpireTime:               time.Second * 300,
+		ExpireTime:               time.Hour, //time.Second * 300
 	}
 
 	node := tcpgossip.GetInstance()
