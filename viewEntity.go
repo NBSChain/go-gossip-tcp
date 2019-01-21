@@ -107,31 +107,31 @@ func (e *ViewEntity) Close() {
 }
 
 func (node *GspCtrlNode) removeViewEntity(id string) {
-
+	node.outLock.Lock()
 	if item, ok := node.outView[id]; ok {
 		logger.Debug("remove from out put view :->", item.nodeID)
-		node.outLock.Lock()
 		delete(node.outView, id)
-		node.outLock.Unlock()
 		item.Close()
 	}
+	node.outLock.Unlock()
 
+	node.inLock.Lock()
 	if item, ok := node.inView[id]; ok {
 		logger.Debug("remove from in put view :->", item.nodeID)
-		node.inLock.Lock()
 		delete(node.inView, id)
-		node.inLock.Unlock()
 		item.Close()
 	}
+	node.inLock.Unlock()
 
 	node.ShowViews()
-
+	node.inLock.RLock()
 	if len(node.inView) == 0 {
 		if err := node.Subscribe(node.SubMsg(true)); err != nil {
 			logger.Warning("resubscribe err:->", err)
 		}
 		logger.Debug("no input view entities and resubscribe now")
 	}
+	node.inLock.RUnlock()
 }
 
 func (node *GspCtrlNode) sendHeartBeat() {
