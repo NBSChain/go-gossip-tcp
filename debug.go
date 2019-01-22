@@ -31,15 +31,19 @@ func (e *ViewEntity) String() string {
 
 func (node *GspCtrlNode) ShowViews() {
 
+	node.outLock.RLock()
 	fmt.Println("------------out view------------")
 	for _, item := range node.outView {
 		fmt.Println(item.String())
 	}
+	node.outLock.RUnlock()
 
+	node.inLock.RLock()
 	fmt.Println("------------in view------------")
 	for _, item := range node.inView {
 		fmt.Println(item.String())
 	}
+	node.inLock.RUnlock()
 }
 
 func (e *ViewEntity) KeyString() string {
