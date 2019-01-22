@@ -132,6 +132,10 @@ func (node *GspCtrlNode) msgProcessor() {
 				err = node.getVote(msg)
 			case gsp_tcp.MsgType_Forward:
 				err = node.getForward(msg)
+			case gsp_tcp.MsgType_UpdateIV:
+				err = node.updateOutViewWeight(msg)
+			case gsp_tcp.MsgType_UpdateOV:
+				err = node.updateInViewWeight(msg)
 			}
 
 		case <-node.ctx.Done():

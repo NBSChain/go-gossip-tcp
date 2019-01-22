@@ -2,6 +2,7 @@ package tcpgossip
 
 import (
 	"context"
+	"fmt"
 	"github.com/NBSChain/go-gossip-tcp/pbs"
 	"github.com/gogo/protobuf/proto"
 	"net"
@@ -145,13 +146,14 @@ func (node *GspCtrlNode) sendHeartBeat() {
 }
 
 func (node *GspCtrlNode) updateWeight() {
-	var sum float64
 
+	var sum float64
 	for _, item := range node.inView {
 		sum += item.probability
 	}
 
 	for _, item := range node.inView {
+		item.probability = item.probability / sum
 		item.send(node.UpdateMsg(gsp_tcp.MsgType_UpdateIV, item.probability))
 	}
 
@@ -161,6 +163,38 @@ func (node *GspCtrlNode) updateWeight() {
 	}
 
 	for _, item := range node.outView {
+		item.probability = item.probability / sum
 		item.send(node.UpdateMsg(gsp_tcp.MsgType_UpdateOV, item.probability))
 	}
+	logger.Debug("time to update arc weight.......")
+}
+
+func (node *GspCtrlNode) updateOutViewWeight(msg *gsp_tcp.CtrlMsg) error {
+	up := msg.UpdateWeight
+	nodeId := up.NodeId
+
+	item, ok := node.outView[nodeId]
+	if !ok {
+		return fmt.Errorf("update out view err, no such item(%s):->", item.KeyString())
+	}
+
+	item.probability = up.Weight
+	logger.Debug("item in out view get updated:->", item.KeyString())
+
+	return nil
+}
+
+func (node *GspCtrlNode) updateInViewWeight(msg *gsp_tcp.CtrlMsg) error {
+	up := msg.UpdateWeight
+	nodeId := up.NodeId
+
+	item, ok := node.inView[nodeId]
+	if !ok {
+		return fmt.Errorf("update in view err, no such item(%s):->", item.KeyString())
+	}
+
+	item.probability = up.Weight
+	logger.Debug("item in in view get updated:->", item.KeyString())
+
+	return nil
 }

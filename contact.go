@@ -19,8 +19,9 @@ func (node *GspCtrlNode) asProxyNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) error 
 		return ESelfReq
 	}
 
-	if node.subNo++; node.subNo > conf.UpdateWeightNo {
-		node.updateWeight()
+	if node.subNo++; node.subNo >= conf.UpdateWeightNo {
+		go node.updateWeight()
+		node.subNo = 0
 	}
 
 	ttl := int32(len(node.outView)) * 2
