@@ -230,6 +230,9 @@ func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
 }
 
 func (node *GspCtrlNode) averageProbability() float64 {
+	node.outLock.RLock()
+	defer node.outLock.RUnlock()
+
 	if len(node.outView) == 0 {
 		return 1.0
 	}
@@ -243,6 +246,8 @@ func (node *GspCtrlNode) averageProbability() float64 {
 }
 
 func (node *GspCtrlNode) normalizeProbability() {
+	node.outLock.RLock()
+	defer node.outLock.RUnlock()
 
 	if len(node.outView) == 0 {
 		return
@@ -259,6 +264,8 @@ func (node *GspCtrlNode) normalizeProbability() {
 }
 
 func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
+	node.outLock.RLock()
+	defer node.outLock.RUnlock()
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -289,6 +296,8 @@ func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
 }
 
 func (node *GspCtrlNode) choseRandom() *ViewEntity {
+	node.outLock.RLock()
+	defer node.outLock.RUnlock()
 
 	idx := rand.Intn(len(node.outView))
 	i := 0

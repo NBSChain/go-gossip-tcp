@@ -24,6 +24,7 @@ func (node *GspCtrlNode) asProxyNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) error 
 	ip, _, _ := net.SplitHostPort(rAddr)
 
 	if ttl == 0 {
+		logger.Debug("no more friends and I am the only can be a contact:->", nodeId)
 		return node.asContactNode(nodeId, ip)
 	}
 
@@ -60,6 +61,7 @@ func (node *GspCtrlNode) getVote(msg *gsp_tcp.CtrlMsg) error {
 	vote := msg.Vote
 	ttl := vote.TTL - 1
 	if ttl <= 0 {
+		logger.Debug("vote finish for ttl 0, I am your destiny:->", vote)
 		return node.asContactNode(vote.NodeId, vote.IP)
 	}
 
