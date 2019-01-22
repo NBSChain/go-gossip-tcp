@@ -350,7 +350,7 @@ func (node *GspCtrlNode) acceptForwarded(msg *gsp_tcp.CtrlMsg) error {
 	node.outLock.Unlock()
 
 	node.ShowViews()
-	logger.Debug("welcome you->", forward)
+	logger.Debug("welcome you:->", forward)
 
 	return nil
 }

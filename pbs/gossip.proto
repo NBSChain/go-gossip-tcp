@@ -10,6 +10,7 @@ enum MsgType{
     GotContact   = 4;
     HeartBeat    = 5;
     WelCome      = 6;
+    UpdateWeight = 7;
     SubAck       = 21;
 }
 
@@ -39,14 +40,19 @@ message ForwardMsg{
     string msgId  = 3;
 }
 
-message CtrlMsg{
-    MsgType     Type        = 1;
-    Subscribe   Subscribe   = 2;
-    Vote        Vote        = 3;
-    ForwardMsg  Forward     = 4;
-    ID          GotContact  = 5;
-    ID          HeartBeat   = 6;
-    ID          Welcome     = 7;
+message Weight{
+    string NodeId   = 1;
+    double Weight   = 2;
+}
 
-    ID          SubAck      = 21;
+message CtrlMsg{
+    MsgType     Type            = 1;
+    Subscribe   Subscribe       = 2;
+    Vote        Vote            = 3;
+    ForwardMsg  Forward         = 4;
+    ID          GotContact      = 5;
+    ID          HeartBeat       = 6;
+    ID          Welcome         = 7;
+    Weight      UpdateWeight    = 8;
+    ID          SubAck          = 21;
 }

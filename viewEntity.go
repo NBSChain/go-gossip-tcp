@@ -125,6 +125,7 @@ func (node *GspCtrlNode) removeViewEntity(id string) {
 	node.inLock.Unlock()
 
 	node.ShowViews()
+
 	node.inLock.RLock()
 	if len(node.inView) == 0 {
 		if err := node.Subscribe(node.SubMsg(true)); err != nil {
