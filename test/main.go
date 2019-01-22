@@ -50,6 +50,7 @@ func mainRun(cmd *cobra.Command, args []string) {
 		GenesisIP:                genesisIp,
 		TCPServicePort:           servicePort,
 		MaxViewItem:              20,
+		Condition:                1,
 		CtrlMsgTimeOut:           time.Second * 4,
 		RetrySubInterval:         time.Second * 15,
 		HeartBeat:                time.Second * 100,

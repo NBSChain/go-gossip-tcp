@@ -26,6 +26,7 @@ type GspConf struct {
 	TCPServicePort           int    //= 13001
 	GossipControlMessageSize int
 	MaxViewItem              int
+	Condition                int
 	CtrlMsgTimeOut           time.Duration
 	RetrySubInterval         time.Duration
 	HeartBeat                time.Duration
@@ -33,26 +34,31 @@ type GspConf struct {
 }
 
 type GspCtrlNode struct {
+	sync.RWMutex
 	ctx    context.Context
 	cancel context.CancelFunc
 
 	nodeId      string
 	serviceConn *net.TCPListener
-	msgTask     chan *gsp_tcp.CtrlMsg
-	outLock     sync.RWMutex
-	outView     map[string]*ViewEntity
-	inLock      sync.RWMutex
-	inView      map[string]*ViewEntity
+
+	msgTask    chan *gsp_tcp.CtrlMsg
+	msgCounter map[string]int
+
+	outLock sync.RWMutex
+	outView map[string]*ViewEntity
+	inLock  sync.RWMutex
+	inView  map[string]*ViewEntity
 }
 
 func newGspNode() *GspCtrlNode {
-	ctx, cl := context.WithCancel(context.Background())
 
+	ctx, cl := context.WithCancel(context.Background())
 	node := &GspCtrlNode{
-		ctx:     ctx,
-		cancel:  cl,
-		outView: make(map[string]*ViewEntity),
-		inView:  make(map[string]*ViewEntity),
+		ctx:        ctx,
+		cancel:     cl,
+		outView:    make(map[string]*ViewEntity),
+		inView:     make(map[string]*ViewEntity),
+		msgCounter: make(map[string]int),
 	}
 	return node
 }
@@ -102,6 +108,10 @@ ReTry:
 		case <-time.After(conf.HeartBeat):
 
 			node.sendHeartBeat()
+
+			node.Lock()
+			node.msgCounter = make(map[string]int)
+			node.Unlock()
 
 			if len(node.inView) == 0 && !isGenesis {
 				data = node.SubMsg(true)
@@ -210,6 +220,14 @@ func (node *GspCtrlNode) connHandle(conn net.Conn) {
 func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
 	forward := msg.Forward
 	nodeId := forward.NodeId
+
+	node.Lock()
+	if node.msgCounter[forward.MsgId]++; node.msgCounter[forward.MsgId] >= 10 {
+		node.Unlock()
+		logger.Warning("forwarded too many times, and discard :->", forward)
+		return nil
+	}
+	node.Unlock()
 
 	prob := float64(1) / float64(1+len(node.outView))
 	randProb := rand.Float64()

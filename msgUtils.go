@@ -1,7 +1,9 @@
 package tcpgossip
 
 import (
+	"fmt"
 	"github.com/NBSChain/go-gossip-tcp/pbs"
+	"github.com/NBSChain/go-nbs/utils/crypto"
 	"github.com/golang/protobuf/proto"
 	"net"
 	"time"
@@ -45,13 +47,18 @@ func (node *GspCtrlNode) VoteMSG(nodeId, ip string, ttl int32) []byte {
 }
 
 func (node *GspCtrlNode) FwdSubMSG(nodeId, ip string) []byte {
+
+	msgID := fmt.Sprintf("%s%d", nodeId, time.Now().Unix())
+
 	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
 		Type: gsp_tcp.MsgType_Forward,
-		Forward: &gsp_tcp.IDWithIP{
+		Forward: &gsp_tcp.ForwardMsg{
 			NodeId: nodeId,
 			IP:     ip,
+			MsgId:  crypto.MD5SS(msgID),
 		},
 	})
+
 	return data
 }
 

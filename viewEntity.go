@@ -84,6 +84,7 @@ func (e *ViewEntity) send(msg []byte) error {
 
 	if _, err := e.conn.Write(msg); err != nil {
 		logger.Warning("send msg err :->", err)
+		e.pareNode.removeViewEntity(e.nodeID)
 		return err
 	}
 	return nil

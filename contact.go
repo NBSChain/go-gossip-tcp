@@ -79,13 +79,13 @@ func (node *GspCtrlNode) broadCast(nodeId, ip string) {
 	data := node.FwdSubMSG(nodeId, ip)
 
 	for id, e := range node.outView {
-
-		if _, err := e.conn.Write(data); err != nil {
-			logger.Warning("introduce new member err:->", err, id)
-			node.removeViewEntity(id)
-		}
-
+		e.send(data)
 		logger.Debug("introduce new subscriber to my friend:->", id)
+	}
+
+	for i := 0; i < conf.Condition; i++ {
+		item := node.choseRandom()
+		item.send(data)
 	}
 }
 

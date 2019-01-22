@@ -10,7 +10,7 @@ enum MsgType{
     GotContact   = 4;
     HeartBeat    = 5;
     WelCome      = 6;
-    SubAck      = 21;
+    SubAck       = 21;
 }
 
 message Subscribe{
@@ -19,9 +19,9 @@ message Subscribe{
 }
 
 message Vote{
-    string NodeId = 1;
-    string IP = 2;
-    int32 TTL = 3;
+    string NodeId   = 1;
+    string IP       = 2;
+    int32 TTL       = 3;
 }
 
 message ID{
@@ -29,16 +29,22 @@ message ID{
 }
 
 message IDWithIP{
+    string NodeId   = 1;
+    string IP       = 2;
+}
+
+message ForwardMsg{
     string NodeId = 1;
-    string IP = 2;
+    string IP     = 2;
+    string msgId  = 3;
 }
 
 message CtrlMsg{
     MsgType     Type        = 1;
     Subscribe   Subscribe   = 2;
     Vote        Vote        = 3;
-    IDWithIP    Forward     = 5;
-    ID          GotContact  = 4;
+    ForwardMsg  Forward     = 4;
+    ID          GotContact  = 5;
     ID          HeartBeat   = 6;
     ID          Welcome     = 7;
 
