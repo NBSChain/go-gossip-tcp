@@ -96,6 +96,19 @@ func (node *GspCtrlNode) WelcomeMsg() []byte {
 	return data
 }
 
+func (node *GspCtrlNode) UpdateMsg(t gsp_tcp.MsgType, w float64) []byte {
+
+	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
+		Type: t,
+		UpdateWeight: &gsp_tcp.Weight{
+			NodeId: node.nodeId,
+			Weight: w,
+		},
+	})
+
+	return data
+}
+
 func (node *GspCtrlNode) pingPongMsg(lAddr, rAddr *net.TCPAddr, timeOut time.Duration, data []byte) (*gsp_tcp.CtrlMsg, error) {
 
 	conn, err := net.DialTCP("tcp4", lAddr, rAddr)

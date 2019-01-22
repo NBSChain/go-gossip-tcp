@@ -146,10 +146,21 @@ func (node *GspCtrlNode) sendHeartBeat() {
 
 func (node *GspCtrlNode) updateWeight() {
 	var sum float64
+
 	for _, item := range node.inView {
 		sum += item.probability
 	}
-	//for _, item := range node.inView{
-	//	//item.send()
-	//}
+
+	for _, item := range node.inView {
+		item.send(node.UpdateMsg(gsp_tcp.MsgType_UpdateIV, item.probability))
+	}
+
+	sum = 0.0
+	for _, item := range node.outView {
+		sum += item.probability
+	}
+
+	for _, item := range node.outView {
+		item.send(node.UpdateMsg(gsp_tcp.MsgType_UpdateOV, item.probability))
+	}
 }

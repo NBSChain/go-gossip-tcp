@@ -3,15 +3,17 @@ syntax = "proto3";
 package gsp.tcp;
 
 enum MsgType{
-    Unknown      = 0;
-    SubInit      = 1;
-    Forward      = 2;
-    VoteContact  = 3;
-    GotContact   = 4;
-    HeartBeat    = 5;
-    WelCome      = 6;
-    UpdateWeight = 7;
-    SubAck       = 21;
+
+    Unknown     = 0;
+    SubInit     = 1;
+    Forward     = 2;
+    VoteContact = 3;
+    GotContact  = 4;
+    HeartBeat   = 5;
+    WelCome     = 6;
+    UpdateIV    = 7;
+    UpdateOV    = 8;
+    SubAck      = 21;
 }
 
 message Subscribe{
