@@ -38,24 +38,17 @@ func (node *GspCtrlNode) subSuccess(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	contact := msg.GotContact
 	nodeId := contact.NodeId
 
-	node.inLock.RLock()
 	if _, ok := node.inView[nodeId]; ok {
-		node.inLock.RUnlock()
 		logger.Warning("duplicate contact notification:->", nodeId)
 		return fmt.Errorf("duplicate contact notification(%s):->", nodeId)
 	}
-	node.inLock.RUnlock()
 
 	ip, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
 	e := node.newViewEntity(conn, ip, contact.NodeId)
 
-	node.inLock.Lock()
 	node.inView[nodeId] = e
-	node.inLock.Unlock()
 
-	node.outLock.Lock()
 	node.outView[nodeId] = e
-	node.outLock.Unlock()
 
 	node.ShowViews()
 
@@ -70,9 +63,7 @@ func (node *GspCtrlNode) beWelcomed(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	ip, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
 	e := node.newViewEntity(conn, ip, welcome.NodeId)
 
-	node.inLock.Lock()
 	node.inView[nodeId] = e
-	node.inLock.Unlock()
 
 	logger.Debug("thanks for your welcome:->", nodeId)
 	node.ShowViews()

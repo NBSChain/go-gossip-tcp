@@ -51,6 +51,7 @@ func mainRun(cmd *cobra.Command, args []string) {
 		TCPServicePort:           servicePort,
 		MaxViewItem:              20,
 		Condition:                1,
+		UpdateWeightNo:           10,
 		CtrlMsgTimeOut:           time.Second * 4,
 		RetrySubInterval:         time.Second * 15,
 		HeartBeat:                time.Second * 100,

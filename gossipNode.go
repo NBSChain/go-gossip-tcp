@@ -8,7 +8,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"math/rand"
 	"net"
-	"sync"
 	"time"
 )
 
@@ -27,6 +26,7 @@ type GspConf struct {
 	GossipControlMessageSize int
 	MaxViewItem              int
 	Condition                int
+	UpdateWeightNo           int
 	CtrlMsgTimeOut           time.Duration
 	RetrySubInterval         time.Duration
 	HeartBeat                time.Duration
@@ -34,7 +34,7 @@ type GspConf struct {
 }
 
 type GspCtrlNode struct {
-	sync.RWMutex
+	subNo  int
 	ctx    context.Context
 	cancel context.CancelFunc
 
@@ -44,9 +44,7 @@ type GspCtrlNode struct {
 	msgTask    chan *gsp_tcp.CtrlMsg
 	msgCounter map[string]int
 
-	outLock sync.RWMutex
 	outView map[string]*ViewEntity
-	inLock  sync.RWMutex
 	inView  map[string]*ViewEntity
 }
 
@@ -108,11 +106,7 @@ ReTry:
 		case <-time.After(conf.HeartBeat):
 
 			node.sendHeartBeat()
-
-			node.Lock()
 			node.msgCounter = make(map[string]int)
-			node.Unlock()
-
 			if len(node.inView) == 0 && !isGenesis {
 				data = node.SubMsg(true)
 				goto ReTry
@@ -221,13 +215,10 @@ func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
 	forward := msg.Forward
 	nodeId := forward.NodeId
 
-	node.Lock()
 	if node.msgCounter[forward.MsgId]++; node.msgCounter[forward.MsgId] >= 10 {
-		node.Unlock()
 		logger.Warning("forwarded too many times, and discard :->", forward)
 		return nil
 	}
-	node.Unlock()
 
 	prob := float64(1) / float64(1+len(node.outView))
 	randProb := rand.Float64()
@@ -248,8 +239,6 @@ func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
 }
 
 func (node *GspCtrlNode) averageProbability() float64 {
-	node.outLock.RLock()
-	defer node.outLock.RUnlock()
 
 	if len(node.outView) == 0 {
 		return 1.0
@@ -264,8 +253,6 @@ func (node *GspCtrlNode) averageProbability() float64 {
 }
 
 func (node *GspCtrlNode) normalizeProbability() {
-	node.outLock.RLock()
-	defer node.outLock.RUnlock()
 
 	if len(node.outView) == 0 {
 		return
@@ -282,8 +269,6 @@ func (node *GspCtrlNode) normalizeProbability() {
 }
 
 func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
-	node.outLock.RLock()
-	defer node.outLock.RUnlock()
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -314,8 +299,6 @@ func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
 }
 
 func (node *GspCtrlNode) choseRandom() *ViewEntity {
-	node.outLock.RLock()
-	defer node.outLock.RUnlock()
 
 	idx := rand.Intn(len(node.outView))
 	i := 0
@@ -345,9 +328,7 @@ func (node *GspCtrlNode) acceptForwarded(msg *gsp_tcp.CtrlMsg) error {
 
 	e := node.newViewEntity(conn, forward.IP, nodeId)
 
-	node.outLock.Lock()
 	node.outView[nodeId] = e
-	node.outLock.Unlock()
 
 	node.ShowViews()
 	logger.Debug("welcome you:->", forward)

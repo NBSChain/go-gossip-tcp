@@ -108,41 +108,30 @@ func (e *ViewEntity) Close() {
 }
 
 func (node *GspCtrlNode) removeViewEntity(id string) {
-	node.outLock.Lock()
 	if item, ok := node.outView[id]; ok {
 		logger.Debug("remove from out put view :->", item.nodeID)
 		delete(node.outView, id)
 		item.Close()
 	}
-	node.outLock.Unlock()
-
-	node.inLock.Lock()
 	if item, ok := node.inView[id]; ok {
 		logger.Debug("remove from in put view :->", item.nodeID)
 		delete(node.inView, id)
 		item.Close()
 	}
-	node.inLock.Unlock()
-
 	node.ShowViews()
 
-	node.inLock.RLock()
 	if len(node.inView) == 0 {
 		if err := node.Subscribe(node.SubMsg(true)); err != nil {
 			logger.Warning("resubscribe err:->", err)
 		}
 		logger.Debug("no input view entities and resubscribe now")
 	}
-	node.inLock.RUnlock()
 }
 
 func (node *GspCtrlNode) sendHeartBeat() {
 
 	data := node.HeartBeatMsg()
 	now := time.Now()
-
-	node.outLock.RLock()
-	defer node.outLock.RUnlock()
 
 	for id, item := range node.outView {
 
@@ -151,10 +140,16 @@ func (node *GspCtrlNode) sendHeartBeat() {
 			node.removeViewEntity(id)
 			continue
 		}
-
-		if _, err := item.conn.Write(data); err != nil {
-			logger.Warning("sending heart beat err:->", id, err)
-			node.removeViewEntity(id)
-		}
+		item.send(data)
 	}
+}
+
+func (node *GspCtrlNode) updateWeight() {
+	var sum float64
+	for _, item := range node.inView {
+		sum += item.probability
+	}
+	//for _, item := range node.inView{
+	//	//item.send()
+	//}
 }
