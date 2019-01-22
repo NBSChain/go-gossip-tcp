@@ -61,7 +61,7 @@ func (node *GspCtrlNode) getVote(msg *gsp_tcp.CtrlMsg) error {
 	vote := msg.Vote
 	ttl := vote.TTL - 1
 	if ttl <= 0 {
-		logger.Debug("vote finish for ttl 0, I am your destiny:->", vote)
+		logger.Debug("I am your destiny:->", vote)
 		return node.asContactNode(vote.NodeId, vote.IP)
 	}
 
@@ -75,8 +75,6 @@ func (node *GspCtrlNode) broadCast(nodeId, ip string) {
 		logger.Debug("as contact I have no friends to introduce to you")
 		return
 	}
-
-	logger.Debug("I'm your contact and prepare to introduce you:->", nodeId, ip)
 
 	data := node.FwdSubMSG(nodeId, ip)
 

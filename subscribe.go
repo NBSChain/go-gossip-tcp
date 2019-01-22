@@ -38,10 +38,13 @@ func (node *GspCtrlNode) subSuccess(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	contact := msg.GotContact
 	nodeId := contact.NodeId
 
+	node.inLock.RLock()
 	if _, ok := node.inView[nodeId]; ok {
+		node.inLock.RUnlock()
 		logger.Warning("duplicate contact notification:->", nodeId)
 		return fmt.Errorf("duplicate contact notification(%s):->", nodeId)
 	}
+	node.inLock.RUnlock()
 
 	ip, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
 	e := node.newViewEntity(conn, ip, contact.NodeId)
