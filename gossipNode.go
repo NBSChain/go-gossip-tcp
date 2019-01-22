@@ -62,6 +62,7 @@ func newGspNode() *GspCtrlNode {
 }
 
 func (node *GspCtrlNode) Init(c *GspConf) error {
+
 	conf = c
 
 	node.msgTask = make(chan *gsp_tcp.CtrlMsg, conf.MaxViewItem)
@@ -123,7 +124,6 @@ func (node *GspCtrlNode) msgProcessor() {
 
 	for {
 		var err error
-
 		select {
 
 		case msg := <-node.msgTask:
@@ -166,6 +166,27 @@ func (node *GspCtrlNode) Run() {
 }
 
 func (node *GspCtrlNode) Destroy() {
+
+	ins := make([]string, 0)
+	outs := make([]string, 0)
+
+	for id := range node.inView {
+		ins = append(ins, id)
+	}
+	for id := range node.outView {
+		outs = append(outs, id)
+	}
+
+	lenIn := len(ins) - conf.Condition - 1
+	lenOut := len(outs)
+	for i := 0; i < lenIn && lenOut > 0; lenIn++ {
+
+		inItem := node.inView[ins[i]]
+
+		outItem := node.outView[outs[i%lenOut]]
+
+		inItem.send(node.ReplaceMsg(outItem.nodeID, outItem.peerIP))
+	}
 }
 
 func (node *GspCtrlNode) connReceiver() {

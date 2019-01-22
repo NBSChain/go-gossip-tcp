@@ -109,6 +109,18 @@ func (node *GspCtrlNode) UpdateMsg(t gsp_tcp.MsgType, w float64) []byte {
 	return data
 }
 
+func (node *GspCtrlNode) ReplaceMsg(id, ip string) []byte {
+	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
+		Type: gsp_tcp.MsgType_ReplaceOV,
+		Replace: &gsp_tcp.IDWithIP{
+			NodeId: node.nodeId,
+			IP:     ip,
+		},
+	})
+
+	return data
+}
+
 func (node *GspCtrlNode) pingPongMsg(lAddr, rAddr *net.TCPAddr, timeOut time.Duration, data []byte) (*gsp_tcp.CtrlMsg, error) {
 
 	conn, err := net.DialTCP("tcp4", lAddr, rAddr)

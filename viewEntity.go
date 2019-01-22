@@ -114,11 +114,13 @@ func (node *GspCtrlNode) removeViewEntity(id string) {
 		delete(node.outView, id)
 		item.Close()
 	}
+
 	if item, ok := node.inView[id]; ok {
 		logger.Debug("remove from in put view :->", item.nodeID)
 		delete(node.inView, id)
 		item.Close()
 	}
+
 	node.ShowViews()
 
 	if len(node.inView) == 0 {

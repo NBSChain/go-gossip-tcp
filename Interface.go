@@ -7,6 +7,7 @@ import (
 type TcpGossip interface {
 	Init(c *GspConf) error
 	Run()
+	Destroy()
 }
 
 var instance *GspCtrlNode
