@@ -165,7 +165,7 @@ func (node *GspCtrlNode) Run() {
 	node.Destroy()
 }
 
-func (node *GspCtrlNode) Destroy() {
+func (node *GspCtrlNode) unsubscribe() {
 
 	ins := make([]string, 0)
 	outs := make([]string, 0)
@@ -177,9 +177,9 @@ func (node *GspCtrlNode) Destroy() {
 		outs = append(outs, id)
 	}
 
-	lenIn := len(ins) - conf.Condition - 1
+	lenIn := len(ins) - conf.Condition - 1 - 1
 	lenOut := len(outs)
-	for i := 0; i < lenIn && lenOut > 0; lenIn++ {
+	for i := 0; i < lenIn && lenOut > 0; i++ {
 
 		inItem := node.inView[ins[i]]
 
@@ -187,18 +187,45 @@ func (node *GspCtrlNode) Destroy() {
 
 		inItem.send(node.ReplaceMsg(outItem.nodeID, outItem.peerIP))
 	}
+
+	for i := lenIn; i >= 0 && i < len(ins); i++ {
+		inItem := node.inView[ins[i]]
+		inItem.send(node.RemoveMsg())
+	}
+
+}
+
+func (node *GspCtrlNode) Destroy() {
+
+	node.unsubscribe()
+
+	for id, item := range node.outView {
+		delete(node.outView, id)
+		item.Close()
+	}
+	node.outView = nil
+
+	for id, item := range node.inView {
+		delete(node.inView, id)
+		item.Close()
+	}
+	node.inView = nil
+
+	node.msgCounter = nil
+	close(node.msgTask)
 }
 
 func (node *GspCtrlNode) connReceiver() {
 
 	logger.Info("tcp gossip node prepare to join in the new network.....")
+
 	defer node.serviceConn.Close()
+	defer node.cancel()
 
 	for {
 		conn, err := node.serviceConn.Accept()
 		if err != nil {
 			logger.Warning("service is done:->", err)
-			node.cancel()
 			return
 		}
 

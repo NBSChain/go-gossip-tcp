@@ -113,8 +113,19 @@ func (node *GspCtrlNode) ReplaceMsg(id, ip string) []byte {
 	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
 		Type: gsp_tcp.MsgType_ReplaceOV,
 		Replace: &gsp_tcp.IDWithIP{
-			NodeId: node.nodeId,
+			NodeId: id,
 			IP:     ip,
+		},
+	})
+
+	return data
+}
+
+func (node *GspCtrlNode) RemoveMsg() []byte {
+	data, _ := proto.Marshal(&gsp_tcp.CtrlMsg{
+		Type: gsp_tcp.MsgType_RemoveOV,
+		Remove: &gsp_tcp.ID{
+			NodeId: node.nodeId,
 		},
 	})
 
