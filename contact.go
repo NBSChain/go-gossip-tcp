@@ -20,11 +20,12 @@ func (node *GspCtrlNode) asProxyNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) error 
 	}
 
 	if node.subNo++; node.subNo >= conf.UpdateWeightNo {
-		go node.updateWeight()
+		go node.inView.SendNewWeight(node.nodeId, gsp_tcp.MsgType_UpdateIV)
+		go node.outView.SendNewWeight(node.nodeId, gsp_tcp.MsgType_UpdateOV)
 		node.subNo = 0
 	}
 
-	ttl := int32(len(node.outView)) * 2
+	ttl := int32(node.outView.Size()) * 2
 	rAddr := conn.RemoteAddr().String()
 	ip, _, _ := net.SplitHostPort(rAddr)
 
@@ -38,9 +39,9 @@ func (node *GspCtrlNode) asProxyNode(msg *gsp_tcp.CtrlMsg, conn net.Conn) error 
 
 func (node *GspCtrlNode) voteTheContact(data []byte) error {
 
-	node.normalizeProbability()
+	node.outView.NormalizeProb()
 
-	item := node.getRandomNodeByProb()
+	item := node.outView.GetRandomNodeByProb()
 
 	logger.Debug("vote a contact:->", item.nodeID)
 
@@ -49,7 +50,7 @@ func (node *GspCtrlNode) voteTheContact(data []byte) error {
 
 func (node *GspCtrlNode) asContactNode(nodeId, ip string) error {
 
-	if _, ok := node.outView[nodeId]; ok {
+	if _, ok := node.outView.Value(nodeId); ok {
 		return EDuplicateSub
 	}
 
@@ -76,20 +77,20 @@ func (node *GspCtrlNode) getVote(msg *gsp_tcp.CtrlMsg) error {
 
 func (node *GspCtrlNode) broadCast(nodeId, ip string) {
 
-	if len(node.outView) == 0 {
+	if node.outView.IsEmpty() {
 		logger.Debug("as contact I have no friends to introduce to you")
 		return
 	}
 
 	data := node.FwdSubMSG(nodeId, ip)
 
-	for id, e := range node.outView {
+	for id, e := range node.outView.AllViews() {
 		e.send(data)
 		logger.Debug("introduce new subscriber to my friend:->", id)
 	}
 
 	for i := 0; i < conf.Condition; i++ {
-		item := node.choseRandom()
+		item := node.outView.ChoseRandom()
 		item.send(data)
 	}
 }
@@ -109,8 +110,8 @@ func (node *GspCtrlNode) notifyApplier(nodeId, ip string) error {
 
 	e := node.newViewEntity(conn, ip, nodeId)
 
-	node.outView[nodeId] = e
-	node.inView[nodeId] = e
+	node.outView.Add(nodeId, e)
+	node.inView.Add(nodeId, e)
 
 	node.ShowViews()
 

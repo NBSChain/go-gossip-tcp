@@ -38,7 +38,7 @@ func (node *GspCtrlNode) subSuccess(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	contact := msg.GotContact
 	nodeId := contact.NodeId
 
-	if _, ok := node.inView[nodeId]; ok {
+	if _, ok := node.inView.Value(nodeId); ok {
 		logger.Warning("duplicate contact notification:->", nodeId)
 		return fmt.Errorf("duplicate contact notification(%s):->", nodeId)
 	}
@@ -46,9 +46,8 @@ func (node *GspCtrlNode) subSuccess(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	ip, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
 	e := node.newViewEntity(conn, ip, contact.NodeId)
 
-	node.inView[nodeId] = e
-
-	node.outView[nodeId] = e
+	node.inView.Add(nodeId, e)
+	node.outView.Add(nodeId, e)
 
 	node.ShowViews()
 
@@ -63,7 +62,7 @@ func (node *GspCtrlNode) beWelcomed(msg *gsp_tcp.CtrlMsg, conn net.Conn) error {
 	ip, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
 	e := node.newViewEntity(conn, ip, welcome.NodeId)
 
-	node.inView[nodeId] = e
+	node.inView.Add(nodeId, e)
 
 	logger.Debug("thanks for your welcome:->", nodeId)
 	node.ShowViews()

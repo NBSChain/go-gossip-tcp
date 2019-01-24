@@ -44,8 +44,8 @@ type GspCtrlNode struct {
 	msgTask    chan *gsp_tcp.CtrlMsg
 	msgCounter map[string]int
 
-	outView map[string]*ViewEntity
-	inView  map[string]*ViewEntity
+	outView *viewMap
+	inView  *viewMap
 }
 
 func newGspNode() *GspCtrlNode {
@@ -54,8 +54,8 @@ func newGspNode() *GspCtrlNode {
 	node := &GspCtrlNode{
 		ctx:        ctx,
 		cancel:     cl,
-		outView:    make(map[string]*ViewEntity),
-		inView:     make(map[string]*ViewEntity),
+		outView:    newViewMap(),
+		inView:     newViewMap(),
 		msgCounter: make(map[string]int),
 	}
 	return node
@@ -81,7 +81,7 @@ func (node *GspCtrlNode) Init(c *GspConf) error {
 	return nil
 }
 
-func (node *GspCtrlNode) gossipManager() {
+func (node *GspCtrlNode) statusMonitor() {
 
 	logger.Info("tcp gossip node prepare to join in the new network.....")
 
@@ -108,7 +108,7 @@ ReTry:
 
 			node.sendHeartBeat()
 			node.msgCounter = make(map[string]int)
-			if len(node.inView) == 0 && !isGenesis {
+			if node.inView.IsEmpty() && !isGenesis {
 				data = node.SubMsg(true)
 				goto ReTry
 			}
@@ -133,9 +133,9 @@ func (node *GspCtrlNode) msgProcessor() {
 			case gsp_tcp.MsgType_Forward:
 				err = node.getForward(msg)
 			case gsp_tcp.MsgType_UpdateIV:
-				err = node.updateOutViewWeight(msg)
+				err = node.outView.UpdateLocalWeight(msg)
 			case gsp_tcp.MsgType_UpdateOV:
-				err = node.updateInViewWeight(msg)
+				err = node.inView.UpdateLocalWeight(msg)
 			}
 
 		case <-node.ctx.Done():
@@ -153,7 +153,7 @@ func (node *GspCtrlNode) Run() {
 
 	go node.connReceiver()
 
-	go node.gossipManager()
+	go node.statusMonitor()
 
 	go node.msgProcessor()
 
@@ -167,29 +167,22 @@ func (node *GspCtrlNode) Run() {
 
 func (node *GspCtrlNode) unsubscribe() {
 
-	ins := make([]string, 0)
-	outs := make([]string, 0)
-
-	for id := range node.inView {
-		ins = append(ins, id)
-	}
-	for id := range node.outView {
-		outs = append(outs, id)
-	}
+	outs := node.outView.Keys()
+	ins := node.inView.Keys()
 
 	lenIn := len(ins) - conf.Condition - 1 - 1
 	lenOut := len(outs)
 	for i := 0; i < lenIn && lenOut > 0; i++ {
 
-		inItem := node.inView[ins[i]]
+		inItem, _ := node.inView.Value(ins[i])
 
-		outItem := node.outView[outs[i%lenOut]]
+		outItem, _ := node.outView.Value(outs[i%lenOut])
 
 		inItem.send(node.ReplaceMsg(outItem.nodeID, outItem.peerIP))
 	}
 
 	for i := lenIn; i >= 0 && i < len(ins); i++ {
-		inItem := node.inView[ins[i]]
+		inItem, _ := node.inView.Value(ins[i])
 		inItem.send(node.RemoveMsg())
 	}
 
@@ -199,17 +192,8 @@ func (node *GspCtrlNode) Destroy() {
 
 	node.unsubscribe()
 
-	for id, item := range node.outView {
-		delete(node.outView, id)
-		item.Close()
-	}
-	node.outView = nil
-
-	for id, item := range node.inView {
-		delete(node.inView, id)
-		item.Close()
-	}
-	node.inView = nil
+	node.outView.Clear()
+	node.inView.Clear()
 
 	node.msgCounter = nil
 	close(node.msgTask)
@@ -228,14 +212,12 @@ func (node *GspCtrlNode) connReceiver() {
 			logger.Warning("service is done:->", err)
 			return
 		}
-
-		go node.connHandle(conn)
+		logger.Debug("one connHandle create:->", conn.RemoteAddr().String())
+		node.connHandle(conn)
 	}
 }
 
 func (node *GspCtrlNode) connHandle(conn net.Conn) {
-
-	logger.Debug("one connHandle create:->", conn.RemoteAddr().String())
 
 	buffer := make([]byte, conf.GossipControlMessageSize)
 	n, err := conn.Read(buffer)
@@ -259,8 +241,6 @@ func (node *GspCtrlNode) connHandle(conn net.Conn) {
 	case gsp_tcp.MsgType_WelCome:
 		err = node.beWelcomed(msg, conn)
 	}
-
-	logger.Debug("one connHandle exit:->", conn.RemoteAddr().String(), err)
 }
 
 func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
@@ -272,12 +252,12 @@ func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
 		return nil
 	}
 
-	prob := float64(1) / float64(1+len(node.outView))
+	prob := float64(1) / float64(1+node.outView.Size())
 	randProb := rand.Float64()
 
-	_, ok := node.outView[nodeId]
+	_, ok := node.outView.Value(nodeId)
 	if ok || randProb > prob {
-		item := node.choseRandom()
+		item := node.outView.ChoseRandom()
 		logger.Debug("introduce you to my friend:->", item.nodeID, ok, randProb, prob)
 		data, _ := proto.Marshal(msg)
 		return item.send(data)
@@ -288,80 +268,6 @@ func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
 	}
 
 	return node.acceptForwarded(msg)
-}
-
-func (node *GspCtrlNode) averageProbability() float64 {
-
-	if len(node.outView) == 0 {
-		return 1.0
-	}
-
-	var sum float64
-	for _, item := range node.outView {
-		sum += item.probability
-	}
-
-	return sum / float64(len(node.outView))
-}
-
-func (node *GspCtrlNode) normalizeProbability() {
-
-	if len(node.outView) == 0 {
-		return
-	}
-
-	var sum float64
-	for _, item := range node.outView {
-		sum += item.probability
-	}
-
-	for _, item := range node.outView {
-		item.probability = item.probability / sum
-	}
-}
-
-func (node *GspCtrlNode) getRandomNodeByProb() *ViewEntity {
-
-	rand.Seed(time.Now().UnixNano())
-
-	var (
-		p           = rand.Float64()
-		sum         = 0.0
-		index       = 0
-		defaultNode *ViewEntity
-	)
-
-	logger.Debug("random mode prob:->", p)
-	for _, item := range node.outView {
-
-		sum += item.probability
-		logger.Debug("total sum, prob:->", sum, item.probability, item.nodeID)
-
-		if p < sum {
-			return item
-		}
-		if index == 0 {
-			defaultNode = item
-		}
-
-		index++
-	}
-
-	return defaultNode
-}
-
-func (node *GspCtrlNode) choseRandom() *ViewEntity {
-
-	idx := rand.Intn(len(node.outView))
-	i := 0
-
-	for _, item := range node.outView {
-		if i == idx {
-			return item
-		}
-		i++
-	}
-	return nil
 }
 
 func (node *GspCtrlNode) acceptForwarded(msg *gsp_tcp.CtrlMsg) error {
@@ -379,10 +285,9 @@ func (node *GspCtrlNode) acceptForwarded(msg *gsp_tcp.CtrlMsg) error {
 	}
 
 	e := node.newViewEntity(conn, forward.IP, nodeId)
-
-	node.outView[nodeId] = e
-
+	node.outView.Add(nodeId, e)
 	node.ShowViews()
+
 	logger.Debug("welcome you:->", forward)
 
 	return nil

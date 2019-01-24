@@ -1,8 +1,6 @@
 package tcpgossip
 
 import (
-	"context"
-	"fmt"
 	"github.com/NBSChain/go-gossip-tcp/pbs"
 	"github.com/gogo/protobuf/proto"
 	"net"
@@ -10,15 +8,13 @@ import (
 	"time"
 )
 
-type ViewEntity struct {
+type viewEntity struct {
 	sync.RWMutex
 	ok bool
 
 	nodeID string
 	peerIP string
 
-	ctx      context.Context
-	closer   context.CancelFunc
 	conn     net.Conn
 	pareNode *GspCtrlNode
 
@@ -27,7 +23,7 @@ type ViewEntity struct {
 	expiredTime   time.Time
 }
 
-func (e *ViewEntity) reading() {
+func (e *viewEntity) reading() {
 
 	logger.Debug("start to read......")
 	defer e.pareNode.removeViewEntity(e.nodeID)
@@ -59,16 +55,12 @@ func (e *ViewEntity) reading() {
 		}
 	}
 }
-
-func (node *GspCtrlNode) newViewEntity(c net.Conn, ip, id string) *ViewEntity {
+func (node *GspCtrlNode) newViewEntity(c net.Conn, ip, id string) *viewEntity {
 
 	logger.Debug("create a new item :->", ip, id)
-	ctx, cancel := context.WithCancel(context.Background())
-	e := &ViewEntity{
+	e := &viewEntity{
 		pareNode:      node,
-		probability:   node.averageProbability(),
-		ctx:           ctx,
-		closer:        cancel,
+		probability:   node.outView.AverageProb(),
 		conn:          c,
 		ok:            true,
 		nodeID:        id,
@@ -81,7 +73,7 @@ func (node *GspCtrlNode) newViewEntity(c net.Conn, ip, id string) *ViewEntity {
 	return e
 }
 
-func (e *ViewEntity) send(msg []byte) error {
+func (e *viewEntity) send(msg []byte) error {
 
 	if _, err := e.conn.Write(msg); err != nil {
 		logger.Warning("send msg err :->", err)
@@ -91,7 +83,7 @@ func (e *ViewEntity) send(msg []byte) error {
 	return nil
 }
 
-func (e *ViewEntity) Close() {
+func (e *viewEntity) Close() {
 	e.Lock()
 	defer e.Unlock()
 
@@ -102,28 +94,19 @@ func (e *ViewEntity) Close() {
 	logger.Info("the connection node closed:->", e.nodeID)
 
 	e.ok = false
-	e.closer()
 	if err := e.conn.Close(); err != nil {
 		logger.Warning("failed to cancel connection node:->", e.nodeID)
 	}
 }
 
 func (node *GspCtrlNode) removeViewEntity(id string) {
-	if item, ok := node.outView[id]; ok {
-		logger.Debug("remove from out put view :->", item.nodeID)
-		delete(node.outView, id)
-		item.Close()
-	}
 
-	if item, ok := node.inView[id]; ok {
-		logger.Debug("remove from in put view :->", item.nodeID)
-		delete(node.inView, id)
-		item.Close()
-	}
+	node.outView.Remove(id)
+	node.inView.Remove(id)
 
 	node.ShowViews()
 
-	if len(node.inView) == 0 {
+	if node.inView.IsEmpty() {
 		if err := node.Subscribe(node.SubMsg(true)); err != nil {
 			logger.Warning("resubscribe err:->", err)
 		}
@@ -136,7 +119,7 @@ func (node *GspCtrlNode) sendHeartBeat() {
 	data := node.HeartBeatMsg()
 	now := time.Now()
 
-	for id, item := range node.outView {
+	for id, item := range node.outView.AllViews() {
 
 		if now.After(item.expiredTime) {
 			logger.Warning("subscribe expired:->", id)
@@ -145,58 +128,4 @@ func (node *GspCtrlNode) sendHeartBeat() {
 		}
 		item.send(data)
 	}
-}
-
-func (node *GspCtrlNode) updateWeight() {
-
-	var sum float64
-	for _, item := range node.inView {
-		sum += item.probability
-	}
-
-	for _, item := range node.inView {
-		item.probability = item.probability / sum
-		item.send(node.UpdateMsg(gsp_tcp.MsgType_UpdateIV, item.probability))
-	}
-
-	sum = 0.0
-	for _, item := range node.outView {
-		sum += item.probability
-	}
-
-	for _, item := range node.outView {
-		item.probability = item.probability / sum
-		item.send(node.UpdateMsg(gsp_tcp.MsgType_UpdateOV, item.probability))
-	}
-	logger.Debug("time to update arc weight.......")
-}
-
-func (node *GspCtrlNode) updateOutViewWeight(msg *gsp_tcp.CtrlMsg) error {
-	up := msg.UpdateWeight
-	nodeId := up.NodeId
-
-	item, ok := node.outView[nodeId]
-	if !ok {
-		return fmt.Errorf("update out view err, no such item(%s):->", item.KeyString())
-	}
-
-	item.probability = up.Weight
-	logger.Debug("item in out view get updated:->", item.KeyString())
-
-	return nil
-}
-
-func (node *GspCtrlNode) updateInViewWeight(msg *gsp_tcp.CtrlMsg) error {
-	up := msg.UpdateWeight
-	nodeId := up.NodeId
-
-	item, ok := node.inView[nodeId]
-	if !ok {
-		return fmt.Errorf("update in view err, no such item(%s):->", item.KeyString())
-	}
-
-	item.probability = up.Weight
-	logger.Debug("item in in view get updated:->", item.KeyString())
-
-	return nil
 }

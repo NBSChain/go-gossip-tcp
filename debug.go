@@ -5,7 +5,7 @@ import (
 	"github.com/NBSChain/go-nbs/utils"
 )
 
-func (e *ViewEntity) String() string {
+func (e *viewEntity) String() string {
 	format := utils.GetConfig().SysTimeFormat
 
 	e.RLock()
@@ -32,16 +32,16 @@ func (e *ViewEntity) String() string {
 func (node *GspCtrlNode) ShowViews() {
 
 	fmt.Println("------------out view------------")
-	for _, item := range node.outView {
+	for _, item := range node.outView.AllViews() {
 		fmt.Println(item.String())
 	}
 
 	fmt.Println("------------in view------------")
-	for _, item := range node.inView {
+	for _, item := range node.inView.AllViews() {
 		fmt.Println(item.String())
 	}
 }
 
-func (e *ViewEntity) KeyString() string {
+func (e *viewEntity) KeyString() string {
 	return fmt.Sprintf("\nnodeId(%s)--->ip(%s)--->prob(%f)\n", e.nodeID, e.peerIP, e.probability)
 }
