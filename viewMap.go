@@ -111,16 +111,17 @@ func (m *viewMap) GetRandomNodeByProb() *viewEntity {
 
 	for _, item := range m.views {
 
+		if index == 0 {
+			defaultNode = item
+		}
+		index++
+
 		sum += item.probability
 		logger.Debug("total sum, prob:->", sum, item.probability, item.nodeID)
 
 		if p < sum {
 			return item
 		}
-		if index == 0 {
-			defaultNode = item
-		}
-		index++
 	}
 
 	return defaultNode
@@ -193,8 +194,5 @@ func (m *viewMap) UpdateLocalWeight(msg *gsp_tcp.CtrlMsg) error {
 }
 
 func (m *viewMap) AllViews() map[string]*viewEntity {
-	m.RLock()
-	defer m.RUnlock()
-
 	return m.views
 }

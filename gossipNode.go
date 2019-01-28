@@ -8,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"math/rand"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -34,6 +35,7 @@ type GspConf struct {
 }
 
 type GspCtrlNode struct {
+	sync.RWMutex
 	subNo  int
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -107,7 +109,9 @@ ReTry:
 		case <-time.After(conf.HeartBeat):
 
 			node.sendHeartBeat()
+			node.Lock()
 			node.msgCounter = make(map[string]int)
+			node.Unlock()
 			if node.inView.IsEmpty() && !isGenesis {
 				data = node.SubMsg(true)
 				goto ReTry
@@ -247,10 +251,13 @@ func (node *GspCtrlNode) getForward(msg *gsp_tcp.CtrlMsg) error {
 	forward := msg.Forward
 	nodeId := forward.NodeId
 
+	node.Lock()
 	if node.msgCounter[forward.MsgId]++; node.msgCounter[forward.MsgId] >= 10 {
+		node.Unlock()
 		logger.Warning("forwarded too many times, and discard :->", forward)
 		return nil
 	}
+	node.Unlock()
 
 	prob := float64(1) / float64(1+node.outView.Size())
 	randProb := rand.Float64()
