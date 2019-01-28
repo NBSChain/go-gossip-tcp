@@ -43,7 +43,7 @@ func (node *GspCtrlNode) voteTheContact(data []byte) error {
 
 	item := node.outView.GetRandomNodeByProb()
 
-	logger.Debug("vote a contact:->", item.nodeID)
+	logger.Debug("vote a contact:->", item.KeyString())
 
 	return item.send(data)
 }
@@ -85,9 +85,9 @@ func (node *GspCtrlNode) broadCast(nodeId, ip string) {
 	data := node.FwdSubMSG(nodeId, ip)
 
 	node.outView.RLock()
-	for id, e := range node.outView.AllViews() {
+	for _, e := range node.outView.AllViews() {
 		e.send(data)
-		logger.Debug("introduce new subscriber to my friend:->", id)
+		logger.Debug("introduce new subscriber to my friend:->", e.KeyString())
 	}
 	node.outView.RUnlock()
 

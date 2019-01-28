@@ -117,7 +117,7 @@ func (m *viewMap) GetRandomNodeByProb() *viewEntity {
 		index++
 
 		sum += item.probability
-		logger.Debug("total sum, prob:->", sum, item.probability, item.nodeID)
+		logger.Debug("total sum, prob:->", sum, item.probability, item.KeyString())
 
 		if p < sum {
 			return item

@@ -44,7 +44,7 @@ func (node *GspCtrlNode) ShowViews() {
 	for _, item := range node.inView.AllViews() {
 		fmt.Println(item.String())
 	}
-	node.inView.RLock()
+	node.inView.RUnlock()
 }
 
 func (e *viewEntity) KeyString() string {
