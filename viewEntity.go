@@ -119,14 +119,17 @@ func (node *GspCtrlNode) sendHeartBeat() {
 	data := node.HeartBeatMsg()
 	now := time.Now()
 
-	node.RLock()
+	node.outView.RLock()
 	for id, item := range node.outView.AllViews() {
 		if now.After(item.expiredTime) {
+
 			logger.Warning("subscribe expired:->", id)
+			node.outView.RUnlock()
 			node.removeViewEntity(id)
+			node.outView.RLock()
 			continue
 		}
 		item.send(data)
 	}
-	node.RUnlock()
+	node.outView.RUnlock()
 }
