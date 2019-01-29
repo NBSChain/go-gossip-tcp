@@ -100,7 +100,7 @@ func (e *viewEntity) Close() {
 }
 
 func (node *GspCtrlNode) removeViewEntity(id string) {
-
+	logger.Debug("remove entity:->", id)
 	node.outView.Remove(id)
 	node.inView.Remove(id)
 
